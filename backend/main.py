@@ -1,0 +1,67 @@
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from dotenv import load_dotenv
+from pydantic import BaseModel, ConfigDict
+from contextlib import asynccontextmanager
+import os
+
+from database import get_db, init_db, engine
+from models import User, AccountType
+from routes.auth import router as auth_router
+from routes.orcid import router as orcid_router
+from routes.global_admin import router as global_admin_router
+from routes.institution_admin import router as institution_admin_router
+from routes.onboarding import router as onboarding_router
+
+load_dotenv()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    print("Database connected and initialized")
+    yield
+    await engine.dispose()
+    print("Database disconnected")
+
+app = FastAPI(title="DACORIS API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth_router)
+app.include_router(orcid_router)
+app.include_router(global_admin_router)
+app.include_router(institution_admin_router)
+app.include_router(onboarding_router)
+
+class UserCreate(BaseModel):
+    email: str
+    name: str | None = None
+
+class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    email: str
+    name: str | None = None
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to DACORIS API"}
+
+@app.get("/api/health")
+async def health_check():
+    return {"status": "healthy", "service": "DACORIS", "database": "connected"}
+
+# User management endpoints moved to admin routes
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
