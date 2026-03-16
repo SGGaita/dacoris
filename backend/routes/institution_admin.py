@@ -25,6 +25,7 @@ class UserResponse(BaseModel):
     status: str
     orcid_id: Optional[str]
     created_at: datetime
+    last_login: Optional[datetime] = None
     
     class Config:
         from_attributes = True
@@ -40,6 +41,51 @@ class InstitutionStats(BaseModel):
     active_users: int
     pending_users: int
     users_by_role: dict
+
+@router.get("/stats")
+async def get_institution_stats(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_institution_admin)
+):
+    """Get institution statistics"""
+    if not current_user.primary_institution_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Institution admin must be associated with an institution"
+        )
+    
+    # Total users
+    total_result = await db.execute(
+        select(func.count(User.id))
+        .where(User.primary_institution_id == current_user.primary_institution_id)
+    )
+    total_users = total_result.scalar()
+    
+    # Active users
+    active_result = await db.execute(
+        select(func.count(User.id))
+        .where(
+            User.primary_institution_id == current_user.primary_institution_id,
+            User.status == UserStatus.ACTIVE
+        )
+    )
+    active_users = active_result.scalar()
+    
+    # Pending users
+    pending_result = await db.execute(
+        select(func.count(User.id))
+        .where(
+            User.primary_institution_id == current_user.primary_institution_id,
+            User.status == UserStatus.PENDING
+        )
+    )
+    pending_users = pending_result.scalar()
+    
+    return {
+        "total_users": total_users,
+        "active_users": active_users,
+        "pending_users": pending_users
+    }
 
 @router.get("/users", response_model=List[UserResponse])
 async def list_institution_users(
@@ -131,6 +177,43 @@ async def approve_user(
     await db.commit()
     
     return {"message": f"User {approval.status} successfully"}
+
+@router.post("/users/{user_id}/reject")
+async def reject_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_institution_admin)
+):
+    """Reject a pending user"""
+    if not current_user.primary_institution_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Institution admin must be associated with an institution"
+        )
+    
+    # Get user
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Verify user belongs to same institution
+    if user.primary_institution_id != current_user.primary_institution_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot manage users from other institutions"
+        )
+    
+    # Update status to suspended
+    user.status = UserStatus.SUSPENDED
+    
+    await db.commit()
+    
+    return {"message": "User rejected successfully"}
 
 @router.post("/users/{user_id}/roles")
 async def assign_roles(
@@ -233,6 +316,30 @@ async def get_user_roles(
     roles = [row[0].value for row in result.fetchall()]
     
     return {"user_id": user_id, "roles": roles}
+
+@router.get("/roles")
+async def list_roles(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_institution_admin)
+):
+    """List all available roles"""
+    # Return the available research roles
+    roles = [
+        {"id": 1, "name": "Principal Investigator", "description": "Lead researcher on projects", "user_count": 0},
+        {"id": 2, "name": "Co-Investigator", "description": "Collaborating researcher", "user_count": 0},
+        {"id": 3, "name": "Postdoctoral Researcher", "description": "Postdoctoral research fellow", "user_count": 0},
+        {"id": 4, "name": "PhD Student", "description": "Doctoral student", "user_count": 0},
+        {"id": 5, "name": "Research Assistant", "description": "Research support staff", "user_count": 0},
+    ]
+    return roles
+
+@router.post("/roles")
+async def create_role(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_institution_admin)
+):
+    """Create a new role (placeholder - roles are predefined)"""
+    return {"message": "Roles are predefined in the system"}
 
 @router.get("/settings")
 async def get_institution_settings(

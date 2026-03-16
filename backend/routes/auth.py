@@ -40,6 +40,11 @@ class UserResponse(BaseModel):
     id: int
     email: str
     name: str
+    is_global_admin: bool
+    is_institution_admin: bool
+    account_type: str
+    status: str
+    institution_id: int | None = None
     
     class Config:
         from_attributes = True

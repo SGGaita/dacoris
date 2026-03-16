@@ -81,7 +81,6 @@ class User(Base):
     last_login = Column(DateTime(timezone=True), nullable=True)
     
     institution = relationship("Institution", back_populates="users", foreign_keys=[primary_institution_id])
-    roles = relationship("ResearchRole", secondary=user_roles, lazy="joined")
     orcid_profile = relationship("OrcidProfile", back_populates="user", uselist=False)
 
 class OrcidProfile(Base):

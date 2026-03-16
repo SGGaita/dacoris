@@ -42,11 +42,36 @@ class UserSummary(BaseModel):
     name: Optional[str]
     account_type: str
     status: str
-    institution_id: Optional[int]
+    institution_id: Optional[int] = None
+    is_global_admin: bool
+    is_institution_admin: bool
+    orcid_id: Optional[str] = None
     created_at: datetime
+    last_login: Optional[datetime] = None
     
     class Config:
         from_attributes = True
+        populate_by_name = True
+        
+    @classmethod
+    def model_validate(cls, obj):
+        # Map primary_institution_id to institution_id
+        if hasattr(obj, 'primary_institution_id'):
+            data = {
+                'id': obj.id,
+                'email': obj.email,
+                'name': obj.name,
+                'account_type': obj.account_type.value if hasattr(obj.account_type, 'value') else obj.account_type,
+                'status': obj.status.value if hasattr(obj.status, 'value') else obj.status,
+                'institution_id': obj.primary_institution_id,
+                'is_global_admin': obj.is_global_admin,
+                'is_institution_admin': obj.is_institution_admin,
+                'orcid_id': obj.orcid_id,
+                'created_at': obj.created_at,
+                'last_login': obj.last_login,
+            }
+            return cls(**data)
+        return super().model_validate(obj)
 
 class PlatformStats(BaseModel):
     total_institutions: int

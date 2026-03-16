@@ -2,7 +2,7 @@ import asyncio
 import click
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from passlib.context import CryptContext
+import bcrypt
 from dotenv import load_dotenv
 import os
 
@@ -10,8 +10,6 @@ from database import async_session_maker, init_db
 from models import User, Institution, AccountType, UserStatus
 
 load_dotenv()
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @click.group()
 def cli():
@@ -33,7 +31,10 @@ def create_global_admin(email, password, name):
                 click.echo(f"Error: User with email {email} already exists")
                 return
             
-            password_hash = pwd_context.hash(password)
+            # Hash password with bcrypt (automatically handles 72 byte limit)
+            password_bytes = password.encode('utf-8')
+            salt = bcrypt.gensalt()
+            password_hash = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
             
             admin = User(
                 email=email,
