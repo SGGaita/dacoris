@@ -84,13 +84,6 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Only allow admin accounts to login with password
-    if user.account_type == AccountType.ORCID:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Please use ORCID authentication"
-        )
-    
     # Check if account is active
     if user.status != UserStatus.ACTIVE:
         raise HTTPException(
