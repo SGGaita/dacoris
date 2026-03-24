@@ -32,12 +32,12 @@ async def seed():
         inst = result.scalar_one_or_none()
         
         if inst:
-            print("⚠️  Institution 'ascensiondynamics.com' already exists, using existing institution")
+            print("[WARN] Institution 'ascensiondynamics.com' already exists, using existing institution")
         else:
             inst = Institution(**DEMO_INSTITUTION)
             db.add(inst)
             await db.flush()
-            print("✅ Created institution: Demo Research University")
+            print("[OK] Created institution: Demo Research University")
 
         # ── Users ───────────────────────────────────────────────────────────
         users = {}
@@ -54,7 +54,7 @@ async def seed():
             user = result.scalar_one_or_none()
             
             if user:
-                print(f"⚠️  User {u['email']} already exists, skipping")
+                print(f"[WARN] User {u['email']} already exists, skipping")
                 users[u["role"]] = user
             else:
                 user = User(
@@ -68,7 +68,7 @@ async def seed():
                 db.add(user)
                 await db.flush()
                 users[u["role"]] = user
-                print(f"✅ Created user: {u['email']}")
+                print(f"[OK] Created user: {u['email']}")
 
         # ── Grant Opportunity ─────────────────────────────────────────────
         opp = GrantOpportunity(
@@ -229,16 +229,16 @@ async def seed():
         ))
 
         await db.commit()
-        print("✅ Seed data created successfully!")
-        print("\n📋 Demo Login Credentials (password: Demo@12345 for all):")
+        print("[OK] Seed data created successfully!")
+        print("\n[INFO] Demo Login Credentials (password: Demo@12345 for all):")
         for u in user_data:
-            print(f"  {u['role']:20s} → {u['email']}")
-        print(f"\n🏛️  Institution: Ascension Dynamics")
-        print(f"📊  Opportunity: Digital Health Innovation Grant 2026")
-        print(f"📄  Proposal in DRAFT: Mobile-Based Maternal Health Monitoring System")
-        print(f"🏆  Funded award: AWD-2026-DEMO01 (KES 3,500,000)")
-        print(f"🔬  Active project with ethics application submitted")
-        print(f"📋  Capture form: Farmer Baseline Survey (KoBoToolbox linked)")
+            print(f"  {u['role']:20s} -> {u['email']}")
+        print(f"\n[INFO] Institution: Ascension Dynamics")
+        print(f"[INFO] Opportunity: Digital Health Innovation Grant 2026")
+        print(f"[INFO] Proposal in DRAFT: Mobile-Based Maternal Health Monitoring System")
+        print(f"[INFO] Funded award: AWD-2026-DEMO01 (KES 3,500,000)")
+        print(f"[INFO] Active project with ethics application submitted")
+        print(f"[INFO] Capture form: Farmer Baseline Survey (KoBoToolbox linked)")
 
 if __name__ == "__main__":
     asyncio.run(seed())

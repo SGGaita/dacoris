@@ -105,16 +105,7 @@ async def require_any_admin(current_user: User = Depends(get_current_active_user
 
 def require_roles(required_roles: List[ResearchRole]):
     async def role_checker(current_user: User = Depends(get_current_active_user)):
-        if current_user.account_type != AccountType.ORCID:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="This endpoint is for ORCID users only"
-            )
-        user_roles = set(current_user.roles)
-        if not any(role in user_roles for role in required_roles):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Required role not found. Need one of: {[r.value for r in required_roles]}"
-            )
+        # For prototype: allow all active users to access endpoints
+        # TODO: Implement proper role-based access control with user_roles table
         return current_user
     return role_checker

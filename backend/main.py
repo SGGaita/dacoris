@@ -11,6 +11,7 @@ from database import get_db, init_db, engine
 from models import User, AccountType
 from routes.auth import router as auth_router
 from routes.orcid import router as orcid_router
+from routes.registration import router as registration_router
 from routes.global_admin import router as global_admin_router
 from routes.institution_admin import router as institution_admin_router
 from routes.onboarding import router as onboarding_router
@@ -44,6 +45,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(orcid_router)
+app.include_router(registration_router)
 app.include_router(global_admin_router)
 app.include_router(institution_admin_router)
 app.include_router(onboarding_router)

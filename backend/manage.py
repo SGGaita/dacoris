@@ -50,7 +50,7 @@ def create_global_admin(email, password, name):
             await session.commit()
             await session.refresh(admin)
             
-            click.echo(f"✓ Global admin created successfully!")
+            click.echo(f"[OK] Global admin created successfully!")
             click.echo(f"  ID: {admin.id}")
             click.echo(f"  Email: {admin.email}")
             click.echo(f"  Name: {admin.name}")
@@ -104,7 +104,7 @@ def reset_admin_password(email, password):
             user.password_hash = pwd_context.hash(password)
             await session.commit()
             
-            click.echo(f"✓ Password reset successfully for {email}")
+            click.echo(f"[OK] Password reset successfully for {email}")
     
     asyncio.run(_reset())
 
@@ -132,7 +132,7 @@ def create_institution(name, domain):
             await session.commit()
             await session.refresh(institution)
             
-            click.echo(f"✓ Institution created successfully!")
+            click.echo(f"[OK] Institution created successfully!")
             click.echo(f"  ID: {institution.id}")
             click.echo(f"  Name: {institution.name}")
             click.echo(f"  Domain: {institution.domain}")
@@ -165,7 +165,7 @@ def init_database():
     """Initialize database tables"""
     async def _init():
         await init_db()
-        click.echo("✓ Database initialized successfully!")
+        click.echo("[OK] Database initialized successfully!")
     
     asyncio.run(_init())
 

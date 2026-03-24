@@ -16,14 +16,35 @@ class UserStatus(str, enum.Enum):
     PENDING = "pending"
     SUSPENDED = "suspended"
 
+class PrimaryAccountType(str, enum.Enum):
+    RESEARCHER = "researcher"
+    GRANT_MANAGER = "grant_manager"
+    FINANCE_OFFICER = "finance_officer"
+    ETHICS_COMMITTEE_MEMBER = "ethics_committee_member"
+    DATA_STEWARD = "data_steward"
+    DATA_ENGINEER = "data_engineer"
+    INSTITUTIONAL_LEADERSHIP = "institutional_leadership"
+    EXTERNAL_REVIEWER = "external_reviewer"
+    GUEST_COLLABORATOR = "guest_collaborator"
+    EXTERNAL_FUNDER = "external_funder"
+
 class ResearchRole(str, enum.Enum):
+    RESEARCHER = "researcher"
     PRINCIPAL_INVESTIGATOR = "principal_investigator"
+    CO_INVESTIGATOR = "co_investigator"
     GRANT_OFFICER = "grant_officer"
+    RESEARCH_ADMIN = "research_admin"
+    FINANCE_OFFICER = "finance_officer"
     ETHICS_REVIEWER = "ethics_reviewer"
+    ETHICS_CHAIR = "ethics_chair"
     DATA_STEWARD = "data_steward"
     DATA_ENGINEER = "data_engineer"
     INSTITUTIONAL_LEAD = "institutional_lead"
     SYSTEM_ADMIN = "system_admin"
+    EXTERNAL_REVIEWER = "external_reviewer"
+    GUEST_COLLABORATOR = "guest_collaborator"
+    EXTERNAL_FUNDER = "external_funder"
+    APPLICANT = "applicant"
 
 user_roles = Table(
     'user_roles',
@@ -75,6 +96,17 @@ class User(Base):
     primary_institution_id = Column(Integer, ForeignKey('institutions.id'), nullable=True, index=True)
     is_global_admin = Column(Boolean, default=False, nullable=False)
     is_institution_admin = Column(Boolean, default=False, nullable=False)
+    
+    primary_account_type = Column(Enum(PrimaryAccountType), nullable=True)
+    department = Column(String(200), nullable=True)
+    job_title = Column(String(200), nullable=True)
+    phone = Column(String(50), nullable=True)
+    expertise_keywords = Column(Text, nullable=True)
+    
+    is_guest = Column(Boolean, default=False, nullable=False)
+    access_expires_at = Column(DateTime(timezone=True), nullable=True)
+    invited_by_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    invitation_context = Column(Text, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
