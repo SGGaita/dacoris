@@ -93,7 +93,7 @@ export default function InstitutionAdminSettingsPage() {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography sx={{ color: '#fff', fontSize: 24, fontWeight: 700, mb: 0.5 }}>Institution Settings</Typography>
-        <Typography sx={{ color: '#64748b', fontSize: 14 }}>Configure your institution's settings and preferences</Typography>
+        <Typography sx={{ color: '#2c3035', fontSize: 14 }}>Configure your institution's settings and preferences</Typography>
       </Box>
 
       {/* Alerts */}
@@ -148,7 +148,7 @@ export default function InstitutionAdminSettingsPage() {
                 '&.Mui-focused fieldset': { borderColor: '#1ca7a1' },
               },
               '& .MuiInputLabel-root': { color: '#94a3b8' },
-              '& .MuiFormHelperText-root': { color: '#64748b' },
+              '& .MuiFormHelperText-root': { color: '#2c3035' },
             }}
           />
 
@@ -170,7 +170,7 @@ export default function InstitutionAdminSettingsPage() {
                 '&.Mui-focused fieldset': { borderColor: '#1ca7a1' },
               },
               '& .MuiInputLabel-root': { color: '#94a3b8' },
-              '& .MuiFormHelperText-root': { color: '#64748b' },
+              '& .MuiFormHelperText-root': { color: '#2c3035' },
             }}
           />
         </Box>
@@ -199,7 +199,7 @@ export default function InstitutionAdminSettingsPage() {
                 <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
                   Auto-approve users with verified domains
                 </Typography>
-                <Typography sx={{ color: '#64748b', fontSize: 12 }}>
+                <Typography sx={{ color: '#2c3035', fontSize: 12 }}>
                   Automatically approve users who register with verified email domains
                 </Typography>
               </Box>

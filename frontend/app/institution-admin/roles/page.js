@@ -106,7 +106,7 @@ export default function InstitutionAdminRolesPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography sx={{ color: '#fff', fontSize: 24, fontWeight: 700, mb: 0.5 }}>Roles & Permissions</Typography>
-          <Typography sx={{ color: '#64748b', fontSize: 14 }}>Manage user roles and access control</Typography>
+          <Typography sx={{ color: '#2c3035', fontSize: 14 }}>Manage user roles and access control</Typography>
         </Box>
         <Button
           variant="contained"
@@ -196,7 +196,7 @@ export default function InstitutionAdminRolesPage() {
 
         {roles.length === 0 && (
           <Box sx={{ p: 4, textAlign: 'center' }}>
-            <Typography sx={{ color: '#64748b', fontSize: 14 }}>No roles created yet</Typography>
+            <Typography sx={{ color: '#2c3035', fontSize: 14 }}>No roles created yet</Typography>
           </Box>
         )}
       </Box>

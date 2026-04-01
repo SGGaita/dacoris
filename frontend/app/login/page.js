@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box, Typography, TextField, Button, Link as MuiLink,
@@ -63,17 +63,10 @@ function NetworkCanvas() {
   return <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />;
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────────
-export default function LoginPage() {
-  const router       = useRouter();
+// ── Token Handler Component ──────────────────────────────────────────────────
+function TokenHandler({ setToken, fetchUser, router }) {
   const searchParams = useSearchParams();
-  const { login, setToken, fetchUser } = useAuth();
-  const muiTheme = useMuiTheme();
   const hasProcessedToken = useRef(false);
-
-  const [form, setForm]         = useState({ email: '', password: '' });
-  const [error, setError]       = useState('');
-  const [isLoading, setLoading] = useState(false);
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -85,7 +78,20 @@ export default function LoginPage() {
       else if (u?.is_institution_admin) router.push('/institution-admin/dashboard');
       else                         router.push('/onboarding');
     });
-  }, [searchParams]);
+  }, [searchParams, setToken, fetchUser, router]);
+
+  return null;
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+function LoginPageContent() {
+  const router = useRouter();
+  const { login, setToken, fetchUser } = useAuth();
+  const muiTheme = useMuiTheme();
+
+  const [form, setForm]         = useState({ email: '', password: '' });
+  const [error, setError]       = useState('');
+  const [isLoading, setLoading] = useState(false);
 
   const handleChange = (field) => (e) => {
     setForm(f => ({ ...f, [field]: e.target.value }));
@@ -125,10 +131,14 @@ export default function LoginPage() {
   };
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: 'background.default', overflow: 'hidden' }}>
+    <>
+      <Suspense fallback={null}>
+        <TokenHandler setToken={setToken} fetchUser={fetchUser} router={router} />
+      </Suspense>
+      <Box sx={{ display: 'flex', height: '100vh', bgcolor: 'background.default', overflow: 'hidden' }}>
 
-      {/* ── Left Panel ── */}
-      <Box
+        {/* ── Left Panel ── */}
+        <Box
         sx={{
           display: { xs: 'none', lg: 'flex' },
           width: '48%',
@@ -313,5 +323,10 @@ export default function LoginPage() {
         </Box>
       </Box>
     </Box>
+    </>
   );
+}
+
+export default function LoginPage() {
+  return <LoginPageContent />;
 }

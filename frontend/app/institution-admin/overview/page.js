@@ -81,7 +81,7 @@ export default function InstitutionAdminOverview() {
         <Typography sx={{ color: '#fff', fontSize: 28, fontWeight: 700, mb: 0.5 }}>
           Institution Dashboard
         </Typography>
-        <Typography sx={{ color: '#64748b', fontSize: 14 }}>
+        <Typography sx={{ color: '#2c3035', fontSize: 14 }}>
           Manage your institution's users and settings
         </Typography>
       </Box>
@@ -101,7 +101,7 @@ export default function InstitutionAdminOverview() {
               <PeopleIcon sx={{ color: '#1ca7a1', fontSize: 24 }} />
             </Box>
             <Box>
-              <Typography sx={{ color: '#64748b', fontSize: 12, fontWeight: 600 }}>TOTAL USERS</Typography>
+              <Typography sx={{ color: '#2c3035', fontSize: 12, fontWeight: 600 }}>TOTAL USERS</Typography>
               <Typography sx={{ color: '#fff', fontSize: 24, fontWeight: 700 }}>{stats?.total_users || 0}</Typography>
             </Box>
           </Box>
@@ -126,7 +126,7 @@ export default function InstitutionAdminOverview() {
               <CheckCircleIcon sx={{ color: '#22c55e', fontSize: 24 }} />
             </Box>
             <Box>
-              <Typography sx={{ color: '#64748b', fontSize: 12, fontWeight: 600 }}>ACTIVE USERS</Typography>
+              <Typography sx={{ color: '#2c3035', fontSize: 12, fontWeight: 600 }}>ACTIVE USERS</Typography>
               <Typography sx={{ color: '#fff', fontSize: 24, fontWeight: 700 }}>{stats?.active_users || 0}</Typography>
             </Box>
           </Box>
@@ -141,11 +141,11 @@ export default function InstitutionAdminOverview() {
               <ScheduleIcon sx={{ color: '#fbbf24', fontSize: 24 }} />
             </Box>
             <Box>
-              <Typography sx={{ color: '#64748b', fontSize: 12, fontWeight: 600 }}>PENDING</Typography>
+              <Typography sx={{ color: '#2c3035', fontSize: 12, fontWeight: 600 }}>PENDING</Typography>
               <Typography sx={{ color: '#fff', fontSize: 24, fontWeight: 700 }}>{stats?.pending_users || 0}</Typography>
             </Box>
           </Box>
-          <Typography sx={{ color: '#64748b', fontSize: 12 }}>
+          <Typography sx={{ color: '#2c3035', fontSize: 12 }}>
             Awaiting approval
           </Typography>
         </Box>
@@ -176,14 +176,14 @@ export default function InstitutionAdminOverview() {
                   <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 600, mb: 0.5 }}>
                     {user.name || 'No name'}
                   </Typography>
-                  <Typography sx={{ color: '#64748b', fontSize: 12 }}>
+                  <Typography sx={{ color: '#2c3035', fontSize: 12 }}>
                     {user.email}
                   </Typography>
                 </Box>
               ))}
             </Box>
           ) : (
-            <Typography sx={{ color: '#64748b', fontSize: 14 }}>No users yet</Typography>
+            <Typography sx={{ color: '#2c3035', fontSize: 14 }}>No users yet</Typography>
           )}
         </Box>
 

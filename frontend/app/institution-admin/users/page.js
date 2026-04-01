@@ -118,7 +118,7 @@ export default function InstitutionAdminUsersPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography sx={{ color: '#fff', fontSize: 24, fontWeight: 700, mb: 0.5 }}>Users</Typography>
-          <Typography sx={{ color: '#64748b', fontSize: 14 }}>Manage users in your institution</Typography>
+          <Typography sx={{ color: '#2c3035', fontSize: 14 }}>Manage users in your institution</Typography>
         </Box>
       </Box>
 
@@ -141,7 +141,7 @@ export default function InstitutionAdminUsersPage() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           InputProps={{
-            startAdornment: <SearchIcon sx={{ color: '#64748b', mr: 1 }} />,
+            startAdornment: <SearchIcon sx={{ color: '#2c3035', mr: 1 }} />,
           }}
           sx={{
             flex: '1 1 300px',
@@ -202,7 +202,7 @@ export default function InstitutionAdminUsersPage() {
                         <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
                           {user.name || 'No name'}
                         </Typography>
-                        <Typography sx={{ color: '#64748b', fontSize: 12 }}>
+                        <Typography sx={{ color: '#2c3035', fontSize: 12 }}>
                           {user.email}
                         </Typography>
                       </Box>
@@ -286,7 +286,7 @@ export default function InstitutionAdminUsersPage() {
         
         {filteredUsers.length === 0 && (
           <Box sx={{ p: 4, textAlign: 'center' }}>
-            <Typography sx={{ color: '#64748b', fontSize: 14 }}>No users found</Typography>
+            <Typography sx={{ color: '#2c3035', fontSize: 14 }}>No users found</Typography>
           </Box>
         )}
       </Box>
@@ -320,7 +320,7 @@ export default function InstitutionAdminUsersPage() {
                     <Typography sx={{ color: '#fff', fontSize: 20, fontWeight: 600 }}>
                       {selectedUser.name || 'No name'}
                     </Typography>
-                    <Typography sx={{ color: '#64748b', fontSize: 14 }}>
+                    <Typography sx={{ color: '#2c3035', fontSize: 14 }}>
                       {selectedUser.email}
                     </Typography>
                   </Box>
@@ -328,7 +328,7 @@ export default function InstitutionAdminUsersPage() {
 
                 <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                   <Box>
-                    <Typography sx={{ color: '#64748b', fontSize: 12, mb: 0.5 }}>Status</Typography>
+                    <Typography sx={{ color: '#2c3035', fontSize: 12, mb: 0.5 }}>Status</Typography>
                     <Chip
                       label={selectedUser.status}
                       sx={{
@@ -342,17 +342,17 @@ export default function InstitutionAdminUsersPage() {
                     />
                   </Box>
                   <Box>
-                    <Typography sx={{ color: '#64748b', fontSize: 12, mb: 0.5 }}>User ID</Typography>
+                    <Typography sx={{ color: '#2c3035', fontSize: 12, mb: 0.5 }}>User ID</Typography>
                     <Typography sx={{ color: '#fff', fontSize: 14 }}>{selectedUser.id}</Typography>
                   </Box>
                   <Box>
-                    <Typography sx={{ color: '#64748b', fontSize: 12, mb: 0.5 }}>Joined</Typography>
+                    <Typography sx={{ color: '#2c3035', fontSize: 12, mb: 0.5 }}>Joined</Typography>
                     <Typography sx={{ color: '#fff', fontSize: 14 }}>
                       {new Date(selectedUser.created_at).toLocaleDateString()}
                     </Typography>
                   </Box>
                   <Box>
-                    <Typography sx={{ color: '#64748b', fontSize: 12, mb: 0.5 }}>Last Login</Typography>
+                    <Typography sx={{ color: '#2c3035', fontSize: 12, mb: 0.5 }}>Last Login</Typography>
                     <Typography sx={{ color: '#fff', fontSize: 14 }}>
                       {selectedUser.last_login ? new Date(selectedUser.last_login).toLocaleDateString() : 'Never'}
                     </Typography>
@@ -361,7 +361,7 @@ export default function InstitutionAdminUsersPage() {
 
                 {selectedUser.orcid_id && (
                   <Box>
-                    <Typography sx={{ color: '#64748b', fontSize: 12, mb: 0.5 }}>ORCID iD</Typography>
+                    <Typography sx={{ color: '#2c3035', fontSize: 12, mb: 0.5 }}>ORCID iD</Typography>
                     <Typography sx={{ color: '#fff', fontSize: 14 }}>{selectedUser.orcid_id}</Typography>
                   </Box>
                 )}

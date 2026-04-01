@@ -137,7 +137,7 @@ export default function InstitutionsPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography sx={{ color: '#fff', fontSize: 24, fontWeight: 700, mb: 0.5 }}>Institutions</Typography>
-          <Typography sx={{ color: '#64748b', fontSize: 14 }}>Manage all registered institutions</Typography>
+          <Typography sx={{ color: '#2c3035', fontSize: 14 }}>Manage all registered institutions</Typography>
         </Box>
         <Button
           variant="contained"
@@ -195,7 +195,7 @@ export default function InstitutionsPage() {
                       size="small"
                       sx={{
                         bgcolor: institution.is_active ? 'rgba(34, 197, 94, 0.1)' : 'rgba(100, 116, 139, 0.1)',
-                        color: institution.is_active ? '#22c55e' : '#64748b',
+                        color: institution.is_active ? '#22c55e' : '#2c3035',
                         border: 'none',
                         fontSize: 11,
                         fontWeight: 600,
@@ -317,7 +317,7 @@ export default function InstitutionsPage() {
                 '&.Mui-focused fieldset': { borderColor: '#4f46e5' },
               },
               '& .MuiInputLabel-root': { color: '#94a3b8' },
-              '& .MuiFormHelperText-root': { color: '#64748b' },
+              '& .MuiFormHelperText-root': { color: '#2c3035' },
             }}
           />
         </DialogContent>
@@ -366,7 +366,7 @@ export default function InstitutionsPage() {
         <DialogTitle sx={{ color: '#fff', fontSize: 18, fontWeight: 700 }}>
           Create Institution Admin
           {selectedInstitution && (
-            <Typography sx={{ color: '#64748b', fontSize: 14, fontWeight: 400, mt: 0.5 }}>
+            <Typography sx={{ color: '#2c3035', fontSize: 14, fontWeight: 400, mt: 0.5 }}>
               {selectedInstitution.name}
             </Typography>
           )}
@@ -427,7 +427,7 @@ export default function InstitutionsPage() {
                 '&.Mui-focused fieldset': { borderColor: '#4f46e5' },
               },
               '& .MuiInputLabel-root': { color: '#94a3b8' },
-              '& .MuiFormHelperText-root': { color: '#64748b' },
+              '& .MuiFormHelperText-root': { color: '#2c3035' },
             }}
           />
         </DialogContent>

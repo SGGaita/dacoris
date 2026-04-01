@@ -71,7 +71,7 @@ export default function AnalyticsPage() {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography sx={{ color: '#fff', fontSize: 24, fontWeight: 700, mb: 0.5 }}>Analytics</Typography>
-        <Typography sx={{ color: '#64748b', fontSize: 14 }}>Platform statistics and insights</Typography>
+        <Typography sx={{ color: '#2c3035', fontSize: 14 }}>Platform statistics and insights</Typography>
       </Box>
 
       {/* Alerts */}
@@ -89,11 +89,11 @@ export default function AnalyticsPage() {
               <SchoolIcon sx={{ color: '#4f46e5', fontSize: 28 }} />
             </Box>
             <Box>
-              <Typography sx={{ color: '#64748b', fontSize: 13, fontWeight: 600, mb: 0.5 }}>Total Institutions</Typography>
+              <Typography sx={{ color: '#2c3035', fontSize: 13, fontWeight: 600, mb: 0.5 }}>Total Institutions</Typography>
               <Typography sx={{ color: '#fff', fontSize: 32, fontWeight: 700 }}>{analytics?.total_institutions || 0}</Typography>
             </Box>
           </Box>
-          <Typography sx={{ color: '#64748b', fontSize: 12 }}>
+          <Typography sx={{ color: '#2c3035', fontSize: 12 }}>
             Registered organizations
           </Typography>
         </Box>
@@ -104,11 +104,11 @@ export default function AnalyticsPage() {
               <PeopleIcon sx={{ color: '#22c55e', fontSize: 28 }} />
             </Box>
             <Box>
-              <Typography sx={{ color: '#64748b', fontSize: 13, fontWeight: 600, mb: 0.5 }}>Total Users</Typography>
+              <Typography sx={{ color: '#2c3035', fontSize: 13, fontWeight: 600, mb: 0.5 }}>Total Users</Typography>
               <Typography sx={{ color: '#fff', fontSize: 32, fontWeight: 700 }}>{analytics?.total_users || 0}</Typography>
             </Box>
           </Box>
-          <Typography sx={{ color: '#64748b', fontSize: 12 }}>
+          <Typography sx={{ color: '#2c3035', fontSize: 12 }}>
             All registered users
           </Typography>
         </Box>
@@ -119,7 +119,7 @@ export default function AnalyticsPage() {
               <TrendingUpIcon sx={{ color: '#10b981', fontSize: 28 }} />
             </Box>
             <Box>
-              <Typography sx={{ color: '#64748b', fontSize: 13, fontWeight: 600, mb: 0.5 }}>Active Users</Typography>
+              <Typography sx={{ color: '#2c3035', fontSize: 13, fontWeight: 600, mb: 0.5 }}>Active Users</Typography>
               <Typography sx={{ color: '#fff', fontSize: 32, fontWeight: 700 }}>{analytics?.active_users || 0}</Typography>
             </Box>
           </Box>
@@ -134,11 +134,11 @@ export default function AnalyticsPage() {
               <PersonAddIcon sx={{ color: '#fbbf24', fontSize: 28 }} />
             </Box>
             <Box>
-              <Typography sx={{ color: '#64748b', fontSize: 13, fontWeight: 600, mb: 0.5 }}>Pending Users</Typography>
+              <Typography sx={{ color: '#2c3035', fontSize: 13, fontWeight: 600, mb: 0.5 }}>Pending Users</Typography>
               <Typography sx={{ color: '#fff', fontSize: 32, fontWeight: 700 }}>{analytics?.pending_users || 0}</Typography>
             </Box>
           </Box>
-          <Typography sx={{ color: '#64748b', fontSize: 12 }}>
+          <Typography sx={{ color: '#2c3035', fontSize: 12 }}>
             Awaiting approval
           </Typography>
         </Box>
@@ -149,11 +149,11 @@ export default function AnalyticsPage() {
               <PeopleIcon sx={{ color: '#3b82f6', fontSize: 28 }} />
             </Box>
             <Box>
-              <Typography sx={{ color: '#64748b', fontSize: 13, fontWeight: 600, mb: 0.5 }}>ORCID Users</Typography>
+              <Typography sx={{ color: '#2c3035', fontSize: 13, fontWeight: 600, mb: 0.5 }}>ORCID Users</Typography>
               <Typography sx={{ color: '#fff', fontSize: 32, fontWeight: 700 }}>{analytics?.total_orcid_users || 0}</Typography>
             </Box>
           </Box>
-          <Typography sx={{ color: '#64748b', fontSize: 12 }}>
+          <Typography sx={{ color: '#2c3035', fontSize: 12 }}>
             Researchers with ORCID
           </Typography>
         </Box>

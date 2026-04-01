@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Container, 
@@ -20,20 +20,10 @@ import Image from 'next/image';
 import { onboardingAPI } from '../../lib/api';
 import useAuthStore from '../../store/authStore';
 
-export default function OnboardingPage() {
-  const router = useRouter();
+// Token Handler Component
+function TokenHandler({ setToken, fetchUser, router, loadInstitutions }) {
   const searchParams = useSearchParams();
-  const { setToken, fetchUser } = useAuthStore();
   const hasInitialized = useRef(false);
-  
-  const [activeStep, setActiveStep] = useState(0);
-  const [institutions, setInstitutions] = useState([]);
-  const [selectedInstitution, setSelectedInstitution] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-
-  const steps = ['Select Institution', 'Confirmation'];
 
   useEffect(() => {
     if (hasInitialized.current) return;
@@ -71,7 +61,23 @@ export default function OnboardingPage() {
     };
     
     initOnboarding();
-  }, []);
+  }, [searchParams, setToken, fetchUser, router, loadInstitutions]);
+
+  return null;
+}
+
+function OnboardingPageContent() {
+  const router = useRouter();
+  const { setToken, fetchUser } = useAuthStore();
+  
+  const [activeStep, setActiveStep] = useState(0);
+  const [institutions, setInstitutions] = useState([]);
+  const [selectedInstitution, setSelectedInstitution] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const steps = ['Select Institution', 'Confirmation'];
 
   const loadInstitutions = async () => {
     try {
@@ -128,8 +134,17 @@ export default function OnboardingPage() {
   }
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ minHeight: '80vh', py: 4 }}>
+    <>
+      <Suspense fallback={null}>
+        <TokenHandler 
+          setToken={setToken} 
+          fetchUser={fetchUser} 
+          router={router} 
+          loadInstitutions={loadInstitutions}
+        />
+      </Suspense>
+      <Container maxWidth="md">
+        <Box sx={{ minHeight: '80vh', py: 4 }}>
         <Paper elevation={0} sx={{ p: 4, bgcolor: 'background.paper' }}>
           <Box sx={{ textAlign: 'center', mb: 4 }}>
             <Image 
@@ -242,5 +257,10 @@ export default function OnboardingPage() {
         </Paper>
       </Box>
     </Container>
+    </>
   );
+}
+
+export default function OnboardingPage() {
+  return <OnboardingPageContent />;
 }
