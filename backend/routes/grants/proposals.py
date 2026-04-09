@@ -208,3 +208,119 @@ async def transition_proposal_status(
         )
 
     return {"id": proposal_id, "status": target_status}
+
+
+@router.post("/{proposal_id}/collaborators", status_code=201)
+async def add_collaborator(
+    proposal_id: int,
+    user_id: int,
+    role: str = "co_investigator",
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles([ResearchRole.PRINCIPAL_INVESTIGATOR]))
+):
+    """Add a collaborator to a proposal"""
+    result = await db.execute(select(Proposal).where(
+        Proposal.id == proposal_id,
+        Proposal.lead_pi_id == current_user.id
+    ))
+    proposal = result.scalar_one_or_none()
+    if not proposal:
+        raise HTTPException(404, "Proposal not found or you're not the lead PI")
+    
+    # Check if user exists
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(404, "User not found")
+    
+    # Check if already a collaborator
+    existing = await db.execute(select(ProposalCollaborator).where(
+        ProposalCollaborator.proposal_id == proposal_id,
+        ProposalCollaborator.user_id == user_id
+    ))
+    if existing.scalar_one_or_none():
+        raise HTTPException(400, "User is already a collaborator")
+    
+    collaborator = ProposalCollaborator(
+        proposal_id=proposal_id,
+        user_id=user_id,
+        role=role
+    )
+    db.add(collaborator)
+    await db.commit()
+    
+    await create_notification(
+        db, user_id,
+        title="Added to proposal",
+        message=f'You have been added as {role} to proposal "{proposal.title}"',
+        entity_type="proposal", entity_id=proposal_id
+    )
+    
+    return {"id": collaborator.id, "user_id": user_id, "role": role}
+
+
+@router.delete("/{proposal_id}/collaborators/{collaborator_id}")
+async def remove_collaborator(
+    proposal_id: int,
+    collaborator_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles([ResearchRole.PRINCIPAL_INVESTIGATOR]))
+):
+    """Remove a collaborator from a proposal"""
+    result = await db.execute(select(Proposal).where(
+        Proposal.id == proposal_id,
+        Proposal.lead_pi_id == current_user.id
+    ))
+    proposal = result.scalar_one_or_none()
+    if not proposal:
+        raise HTTPException(404, "Proposal not found or you're not the lead PI")
+    
+    collaborator = await db.get(ProposalCollaborator, collaborator_id)
+    if not collaborator or collaborator.proposal_id != proposal_id:
+        raise HTTPException(404, "Collaborator not found")
+    
+    await db.delete(collaborator)
+    await db.commit()
+    return {"message": "Collaborator removed"}
+
+
+@router.get("/{proposal_id}/completion")
+async def get_proposal_completion(
+    proposal_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles([
+        ResearchRole.PRINCIPAL_INVESTIGATOR, ResearchRole.GRANT_OFFICER
+    ]))
+):
+    """Get proposal completion percentage"""
+    result = await db.execute(
+        select(Proposal).options(
+            selectinload(Proposal.sections),
+            selectinload(Proposal.documents)
+        ).where(
+            Proposal.id == proposal_id,
+            Proposal.institution_id == current_user.primary_institution_id
+        )
+    )
+    proposal = result.scalar_one_or_none()
+    if not proposal:
+        raise HTTPException(404, "Proposal not found")
+    
+    total_sections = len(proposal.sections)
+    completed_sections = sum(1 for s in proposal.sections if s.word_count > 50)
+    
+    required_docs = ["cv", "budget", "support_letter"]
+    uploaded_doc_types = {d.document_type for d in proposal.documents}
+    completed_docs = sum(1 for dt in required_docs if dt in uploaded_doc_types)
+    
+    section_pct = (completed_sections / total_sections * 100) if total_sections > 0 else 0
+    doc_pct = (completed_docs / len(required_docs) * 100) if required_docs else 0
+    overall_pct = (section_pct * 0.7 + doc_pct * 0.3)
+    
+    return {
+        "overall_percentage": round(overall_pct, 1),
+        "sections_completed": completed_sections,
+        "sections_total": total_sections,
+        "documents_completed": completed_docs,
+        "documents_required": len(required_docs),
+        "missing_documents": [dt for dt in required_docs if dt not in uploaded_doc_types]
+    }

@@ -1,8 +1,9 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, Enum, Table, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, Enum, Table, UniqueConstraint, Float, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
+import secrets
 
 Base = declarative_base()
 
@@ -17,16 +18,17 @@ class UserStatus(str, enum.Enum):
     SUSPENDED = "suspended"
 
 class PrimaryAccountType(str, enum.Enum):
-    RESEARCHER = "researcher"
-    GRANT_MANAGER = "grant_manager"
-    FINANCE_OFFICER = "finance_officer"
-    ETHICS_COMMITTEE_MEMBER = "ethics_committee_member"
-    DATA_STEWARD = "data_steward"
-    DATA_ENGINEER = "data_engineer"
-    INSTITUTIONAL_LEADERSHIP = "institutional_leadership"
-    EXTERNAL_REVIEWER = "external_reviewer"
-    GUEST_COLLABORATOR = "guest_collaborator"
-    EXTERNAL_FUNDER = "external_funder"
+    RESEARCHER = "RESEARCHER"
+    ADMIN_STAFF = "ADMIN_STAFF"
+    GRANT_MANAGER = "GRANT_MANAGER"
+    FINANCE_OFFICER = "FINANCE_OFFICER"
+    ETHICS_COMMITTEE_MEMBER = "ETHICS_COMMITTEE_MEMBER"
+    DATA_STEWARD = "DATA_STEWARD"
+    DATA_ENGINEER = "DATA_ENGINEER"
+    INSTITUTIONAL_LEADERSHIP = "INSTITUTIONAL_LEADERSHIP"
+    EXTERNAL_REVIEWER = "EXTERNAL_REVIEWER"
+    GUEST_COLLABORATOR = "GUEST_COLLABORATOR"
+    EXTERNAL_FUNDER = "EXTERNAL_FUNDER"
 
 class ResearchRole(str, enum.Enum):
     RESEARCHER = "researcher"
@@ -83,6 +85,7 @@ class User(Base):
     email = Column(String, index=True, nullable=False)
     name = Column(String, nullable=True)
     password_hash = Column(String, nullable=True)
+    email_verified = Column(Boolean, default=False, nullable=False)
     
     account_type = Column(Enum(AccountType), nullable=False, default=AccountType.ORCID)
     status = Column(Enum(UserStatus), nullable=False, default=UserStatus.PENDING)
@@ -114,6 +117,7 @@ class User(Base):
     
     institution = relationship("Institution", back_populates="users", foreign_keys=[primary_institution_id])
     orcid_profile = relationship("OrcidProfile", back_populates="user", uselist=False)
+    notifications = relationship("Notification", back_populates="recipient", foreign_keys="Notification.recipient_id")
 
 class OrcidProfile(Base):
     __tablename__ = "orcid_profiles"
@@ -196,7 +200,7 @@ class GrantOpportunity(Base):
     __tablename__ = "grant_opportunities"
 
     id = Column(Integer, primary_key=True, index=True)
-    institution_id = Column(Integer, ForeignKey("institutions.id"), nullable=False)
+    institution_id = Column(Integer, ForeignKey("institutions.id"), nullable=True)
     title = Column(String(500), nullable=False)
     sponsor = Column(String(300))
     description = Column(Text)
@@ -204,15 +208,19 @@ class GrantOpportunity(Base):
     geography = Column(String(200))
     applicant_type = Column(String(200))
     funding_type = Column(String(100))
-    amount_min = Column(Integer)
-    amount_max = Column(Integer)
+    amount_min = Column(Float)
+    amount_max = Column(Float)
     currency = Column(String(10), default="KES")
     open_date = Column(DateTime(timezone=True))
-    deadline = Column(DateTime(timezone=True))
+    deadline = Column(Date)
+    eligibility = Column(Text)
+    criteria = Column(Text)
+    application_url = Column(String(500))
+    contact_email = Column(String(200))
     source_system = Column(String(100), default="internal")
     source_id = Column(String(200))
-    status = Column(String(50), default="open")
-    created_by_id = Column(Integer, ForeignKey("users.id"))
+    status = Column(String(50), default="open", index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -448,16 +456,155 @@ class FormSubmission(Base):
 
 # ─── CROSS-CUTTING: NOTIFICATIONS ────────────────────────────────────────────
 
-class Notification(Base):
-    __tablename__ = "notifications"
+class EmailVerification(Base):
+    __tablename__ = "email_verifications"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    title = Column(String(300), nullable=False)
-    message = Column(Text)
-    entity_type = Column(String(100))
-    entity_id = Column(Integer)
-    is_read = Column(Boolean, default=False)
+    email = Column(String, nullable=False, index=True)
+    verification_code = Column(String(6), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    verified = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    verified_at = Column(DateTime(timezone=True), nullable=True)
 
-    user = relationship("User", foreign_keys=[user_id])
+class NotificationType(str, enum.Enum):
+    NEW_REGISTRATION = "new_registration"
+    ACCOUNT_APPROVED = "account_approved"
+    ACCOUNT_REJECTED = "account_rejected"
+    ROLE_ASSIGNED = "role_assigned"
+    ROLE_REMOVED = "role_removed"
+    PROPOSAL_SUBMITTED = "proposal_submitted"
+    PROPOSAL_APPROVED = "proposal_approved"
+    PROPOSAL_REJECTED = "proposal_rejected"
+    REVIEW_ASSIGNED = "review_assigned"
+    COMMENT_ADDED = "comment_added"
+    SYSTEM_ANNOUNCEMENT = "system_announcement"
+
+class NotificationPriority(str, enum.Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    URGENT = "urgent"
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    recipient_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    type = Column(Enum(NotificationType), nullable=False)
+    priority = Column(Enum(NotificationPriority), default=NotificationPriority.MEDIUM)
+    
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    
+    action_url = Column(String, nullable=True)
+    
+    related_entity_type = Column(String, nullable=True)
+    related_entity_id = Column(Integer, nullable=True)
+    
+    is_read = Column(Boolean, default=False, nullable=False, index=True)
+    read_at = Column(DateTime(timezone=True), nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    
+    recipient = relationship("User", back_populates="notifications", foreign_keys=[recipient_id])
+
+
+# ==================== SCHOLARLY WORKS MODELS ====================
+
+class ScholarlyWork(Base):
+    __tablename__ = "scholarly_works"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False, index=True)
+    abstract = Column(Text, nullable=True)
+    publication_year = Column(Integer, nullable=True, index=True)
+    publication_date = Column(Date, nullable=True)
+    
+    # Identifiers
+    doi = Column(String, unique=True, nullable=True, index=True)
+    pmid = Column(String, unique=True, nullable=True, index=True)
+    arxiv_id = Column(String, unique=True, nullable=True, index=True)
+    openalex_id = Column(String, unique=True, nullable=True, index=True)
+    
+    # Publication details
+    work_type = Column(String, nullable=True, index=True)  # article, book, dataset, etc.
+    venue_name = Column(String, nullable=True)  # journal/conference name
+    volume = Column(String, nullable=True)
+    issue = Column(String, nullable=True)
+    pages = Column(String, nullable=True)
+    publisher = Column(String, nullable=True)
+    
+    # Metrics
+    cited_by_count = Column(Integer, default=0)
+    is_open_access = Column(Boolean, default=False)
+    open_access_url = Column(String, nullable=True)
+    
+    # Categorization
+    primary_topic = Column(String, nullable=True, index=True)
+    keywords = Column(Text, nullable=True)  # JSON array as text
+    
+    # Status
+    is_published = Column(Boolean, default=True)
+    is_retracted = Column(Boolean, default=False)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    authors = relationship("WorkAuthor", back_populates="work", cascade="all, delete-orphan")
+    institutions = relationship("WorkInstitution", back_populates="work", cascade="all, delete-orphan")
+    funders = relationship("WorkFunder", back_populates="work", cascade="all, delete-orphan")
+
+
+class WorkAuthor(Base):
+    __tablename__ = "work_authors"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    work_id = Column(Integer, ForeignKey('scholarly_works.id', ondelete='CASCADE'), nullable=False)
+    
+    author_name = Column(String, nullable=False)
+    author_position = Column(Integer, nullable=False)  # 1 = first author, etc.
+    is_corresponding = Column(Boolean, default=False)
+    
+    # Author identifiers
+    orcid = Column(String, nullable=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)  # Link to system user if exists
+    
+    # Affiliation at time of publication
+    affiliation_name = Column(String, nullable=True)
+    affiliation_country = Column(String, nullable=True)
+    
+    work = relationship("ScholarlyWork", back_populates="authors")
+    user = relationship("User")
+
+
+class WorkInstitution(Base):
+    __tablename__ = "work_institutions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    work_id = Column(Integer, ForeignKey('scholarly_works.id', ondelete='CASCADE'), nullable=False)
+    institution_id = Column(Integer, ForeignKey('institutions.id'), nullable=True)
+    
+    institution_name = Column(String, nullable=False)
+    institution_country = Column(String, nullable=True)
+    institution_type = Column(String, nullable=True)  # university, research_institute, etc.
+    
+    work = relationship("ScholarlyWork", back_populates="institutions")
+    institution = relationship("Institution")
+
+
+class WorkFunder(Base):
+    __tablename__ = "work_funders"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    work_id = Column(Integer, ForeignKey('scholarly_works.id', ondelete='CASCADE'), nullable=False)
+    
+    funder_name = Column(String, nullable=False)
+    funder_country = Column(String, nullable=True)
+    grant_number = Column(String, nullable=True)
+    award_amount = Column(Float, nullable=True)
+    currency = Column(String, default='USD')
+    
+    work = relationship("ScholarlyWork", back_populates="funders")

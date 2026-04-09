@@ -6,7 +6,7 @@ from typing import List, Optional
 from datetime import datetime
 
 from database import get_db
-from models import User, Institution, AccountType, UserStatus, ResearchRole, user_roles
+from models import User, Institution, AccountType, UserStatus, ResearchRole, PrimaryAccountType, user_roles
 from auth import require_institution_admin
 
 router = APIRouter(prefix="/api/institution-admin", tags=["institution-admin"])
@@ -16,6 +16,7 @@ class UserApproval(BaseModel):
 
 class RoleAssignment(BaseModel):
     roles: List[str]
+    primary_account_type: Optional[str] = None
 
 class UserResponse(BaseModel):
     id: int
@@ -26,6 +27,10 @@ class UserResponse(BaseModel):
     orcid_id: Optional[str]
     created_at: datetime
     last_login: Optional[datetime] = None
+    primary_account_type: Optional[str] = None
+    department: Optional[str] = None
+    job_title: Optional[str] = None
+    roles: Optional[List[str]] = None
     
     class Config:
         from_attributes = True
@@ -108,7 +113,26 @@ async def list_institution_users(
         .limit(limit)
     )
     users = result.scalars().all()
-    return users
+
+    # Attach roles to each user
+    enriched = []
+    for u in users:
+        roles_result = await db.execute(
+            select(user_roles.c.role).where(user_roles.c.user_id == u.id)
+        )
+        role_list = [r[0].value for r in roles_result.fetchall()]
+        user_dict = {
+            "id": u.id, "email": u.email, "name": u.name,
+            "account_type": u.account_type.value if u.account_type else None,
+            "status": u.status.value if u.status else None,
+            "orcid_id": u.orcid_id, "created_at": u.created_at,
+            "last_login": u.last_login,
+            "primary_account_type": u.primary_account_type.value if u.primary_account_type else None,
+            "department": u.department, "job_title": u.job_title,
+            "roles": role_list,
+        }
+        enriched.append(user_dict)
+    return enriched
 
 @router.get("/users/pending", response_model=List[UserResponse])
 async def list_pending_users(
@@ -246,13 +270,6 @@ async def assign_roles(
             detail="Cannot manage users from other institutions"
         )
     
-    # Verify user is ORCID type
-    if user.account_type != AccountType.ORCID:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Roles can only be assigned to ORCID users"
-        )
-    
     # Delete existing roles
     await db.execute(
         user_roles.delete().where(user_roles.c.user_id == user_id)
@@ -275,6 +292,16 @@ async def assign_roles(
                 detail=f"Invalid role: {role_str}"
             )
     
+    # Update primary_account_type if provided
+    if role_data.primary_account_type:
+        try:
+            user.primary_account_type = PrimaryAccountType(role_data.primary_account_type)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid primary_account_type: {role_data.primary_account_type}"
+            )
+
     await db.commit()
     
     return {"message": "Roles assigned successfully", "roles": role_data.roles}

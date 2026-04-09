@@ -74,9 +74,11 @@ function TokenHandler({ setToken, fetchUser, router }) {
     hasProcessedToken.current = true;
     setToken(token);
     fetchUser().then((u) => {
-      if (u?.is_global_admin)      router.push('/global-admin/dashboard');
-      else if (u?.is_institution_admin) router.push('/institution-admin/dashboard');
-      else                         router.push('/onboarding');
+      if (u?.is_global_admin)           router.push('/global-admin/dashboard');
+      else if (u?.is_institution_admin)  router.push('/institution-admin/dashboard');
+      else if (u?.primary_account_type === 'RESEARCHER') router.push('/researcher/dashboard');
+      else if (['ADMIN_STAFF','GRANT_MANAGER','FINANCE_OFFICER','ETHICS_COMMITTEE_MEMBER','DATA_STEWARD','DATA_ENGINEER','INSTITUTIONAL_LEADERSHIP','EXTERNAL_REVIEWER','GUEST_COLLABORATOR','EXTERNAL_FUNDER'].includes(u?.primary_account_type)) router.push('/admin-staff/dashboard');
+      else                               router.push('/onboarding');
     });
   }, [searchParams, setToken, fetchUser, router]);
 
@@ -118,6 +120,12 @@ function LoginPageContent() {
         } else if (u.is_institution_admin) {
           console.log('Redirecting to institution admin dashboard');
           window.location.href = '/institution-admin/dashboard';
+        } else if (u.primary_account_type === 'RESEARCHER') {
+          console.log('Redirecting to researcher dashboard');
+          window.location.href = '/researcher/dashboard';
+        } else if (['ADMIN_STAFF','GRANT_MANAGER','FINANCE_OFFICER','ETHICS_COMMITTEE_MEMBER','DATA_STEWARD','DATA_ENGINEER','INSTITUTIONAL_LEADERSHIP','EXTERNAL_REVIEWER','GUEST_COLLABORATOR','EXTERNAL_FUNDER'].includes(u.primary_account_type)) {
+          console.log('Redirecting to admin staff dashboard');
+          window.location.href = '/admin-staff/dashboard';
         } else {
           console.log('Redirecting to onboarding');
           window.location.href = '/onboarding';

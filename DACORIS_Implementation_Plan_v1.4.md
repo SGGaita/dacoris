@@ -16,9 +16,11 @@
 6. [Module 2 – Research Management](#6-module-2--research-management)
 7. [Module 3A – Data Management: Capture, Repository & Analysis](#7-module-3a--data-management-capture-repository--analysis)
 8. [Module 3B – Data Management: Enterprise Big-Data & Analytics](#8-module-3b--data-management-enterprise-big-data--analytics)
-9. [Cross-Cutting Platform Services](#9-cross-cutting-platform-services)
-10. [External Integrations](#10-external-integrations)
-11. [Phased Roadmap & Milestones](#11-phased-roadmap--milestones)
+9. [Module 5 – Performance Contracting & Institutional Effectiveness](#9-module-5--performance-contracting--institutional-effectiveness)
+10. [Module 6 – Training & Capacity Building with AI](#10-module-6--training--capacity-building-with-ai)
+11. [Cross-Cutting Platform Services](#11-cross-cutting-platform-services)
+12. [External Integrations](#12-external-integrations)
+12. [Phased Roadmap & Milestones](#12-phased-roadmap--milestones)
 12. [Technical Standards & Compliance](#12-technical-standards--compliance)
 13. [Testing & QA Strategy](#13-testing--qa-strategy)
 14. [Deployment & DevOps](#14-deployment--devops)
@@ -44,6 +46,8 @@ DACORIS (Data Conveyance Research Information System) is a modular enterprise pl
 - **Research Management** – CRIS/RIMS-style research governance, ethics workflows, outputs tracking
 - **Data Management Part A** – Research data capture, QA pipeline, repository, and analysis
 - **Data Management Part B** – Cloud-native big-data platform: ETL, data lake, warehouse, ML, BI
+- **Performance Contracting** – Kenyan public university performance management, cascading targets, quarterly monitoring, annual evaluation
+- **Training & Capacity Building with AI** – LMS with AI-powered content generation, personalized learning paths, teaching assistants, automated assessment, and research writing support
 
 The platform is built on a FastAPI (Python) backend with PostgreSQL and a Next.js frontend. The Identity & Access Management (IAM) layer — including ORCID OAuth, multi-tenancy, and RBAC — is already implemented on GitHub and serves as the foundation for all subsequent modules.
 
@@ -394,59 +398,332 @@ POST   /api/grants/proposals/{id}/comments
 
 ---
 
-#### 5.2.3 Application Intake & Workflow Engine
+#### 5.2.3 Application Intake & Multi-Level Workflow Engine
 
-**Features:**
-- Configurable workflow stages per program: `Intake → Eligibility Screening → Internal Review → Panel Review → Due Diligence → Approval → Award → Contracting → Post-Award → Closeout`
-- Stage-transition rules: required documents, minimum scores, quorum, COI clearance
-- Automated acknowledgement emails at each stage transition
-- Applicant portal showing current status and required actions
-- Internal staff pipeline dashboard: applications by stage, workload, risk flags
-- Stage SLA tracking with alerts for overdue items
+**Overview:**
+The workflow engine orchestrates proposals through a **5-level review process** with automated stage transitions, status tracking, and step indicators visible to both applicants and reviewers.
+
+**Complete Workflow Stages:**
+
+```
+Submission → Step 1/5 → Step 2/5 → Step 3/5 → Step 4/5 → Step 5/5 → Award/Reject
+    ↓           ↓          ↓          ↓          ↓          ↓           ↓
+ Received   Eligibility Technical  Budget    Panel    Final      Outcome
+            Review     Review     Review    Review   Approval   Notification
+```
+
+**Detailed Stage Flow:**
+
+**Stage 0: Submission & Intake**
+- **Status:** `Submitted - Awaiting Review`
+- **Step Indicator:** `Received`
+- **Actions:** 
+  - Proposal submitted by applicant
+  - Automatic acknowledgment email sent
+  - Assigned to grant office queue
+  - Completeness check initiated
+- **Duration:** Immediate
+- **Transition:** Auto-advance to Step 1/5
+
+**Stage 1: Eligibility Review (Step 1/5)**
+- **Status:** `Step 1/5: Eligibility Review`
+- **Reviewers:** Grant Office Staff (1-2 reviewers)
+- **Transition Rules:**
+  - All required documents present
+  - Applicant eligibility verified
+  - Budget within program limits
+  - Institutional endorsement confirmed
+- **Possible Outcomes:**
+  - ✅ `Pass` → Advance to Step 2/5
+  - ⚠️ `Return for Corrections` → Back to applicant (stays at Step 1/5)
+  - ❌ `Reject - Ineligible` → Terminal state
+- **SLA:** 3-5 business days
+- **Notifications:** Email to applicant on decision
+
+**Stage 2: Technical/Scientific Review (Step 2/5)**
+- **Status:** `Step 2/5: Technical Review`
+- **Reviewers:** 2-3 Subject Matter Experts
+- **Transition Rules:**
+  - All assigned reviewers submit scores
+  - No unresolved COI conflicts
+  - Average score ≥ 70/100 (configurable threshold)
+  - All review criteria scored
+- **Possible Outcomes:**
+  - ✅ `Pass` → Advance to Step 3/5
+  - ⚠️ `Conditional Pass` → Revisions required, re-review at Step 2/5
+  - ❌ `Reject - Low Score` → Terminal state
+- **SLA:** 14-21 days
+- **Notifications:** Reminder emails at 7 days, 3 days before deadline
+
+**Stage 3: Budget & Financial Review (Step 3/5)**
+- **Status:** `Step 3/5: Budget Review`
+- **Reviewers:** Finance Officer + Budget Analyst
+- **Transition Rules:**
+  - Budget review completed
+  - All budget lines validated
+  - Cost-sharing verified (if applicable)
+  - No unallowable costs identified
+- **Possible Outcomes:**
+  - ✅ `Approve Budget` → Advance to Step 4/5
+  - ⚠️ `Request Budget Revision` → Back to applicant, re-review at Step 3/5
+  - ❌ `Reject - Budget Issues` → Terminal state
+- **SLA:** 7-10 days
+- **Notifications:** Email on budget approval/revision request
+
+**Stage 4: Panel Review & Consensus (Step 4/5)**
+- **Status:** `Step 4/5: Panel Review`
+- **Reviewers:** Review Panel (5-7 members)
+- **Transition Rules:**
+  - Panel meeting conducted
+  - Quorum met (≥60% attendance)
+  - All proposals ranked
+  - Funding recommendations recorded
+- **Possible Outcomes:**
+  - ✅ `Recommend for Funding` → Advance to Step 5/5
+  - ⏸️ `Waitlist` → Hold state (may advance if funds available)
+  - ❌ `Do Not Fund` → Terminal state
+- **SLA:** Panel meeting + 5 days for documentation
+- **Notifications:** Panel invitation, meeting minutes shared
+
+**Stage 5: Due Diligence & Final Approval (Step 5/5)**
+- **Status:** `Step 5/5: Final Approval`
+- **Reviewers:** Grant Officer + Institutional Lead + Legal (if needed)
+- **Transition Rules:**
+  - Institutional capacity verified
+  - Compliance checks passed
+  - Risk assessment completed
+  - Award conditions defined
+  - Legal review completed (if required)
+- **Possible Outcomes:**
+  - ✅ `Issue Award` → Award issued, project created
+  - ⚠️ `Issue Award with Conditions` → Award issued with special conditions
+  - ⏸️ `Defer` → Hold pending additional information
+  - ❌ `Reject` → Terminal state
+- **SLA:** 5-7 days
+- **Notifications:** Award letter or rejection with feedback
+
+**Stage 6: Award Notification & Contracting**
+- **Status:** `Awarded` or `Not Awarded`
+- **Step Indicator:** `Complete`
+- **Actions:**
+  - Award letter generated and sent
+  - Contract/agreement prepared
+  - Research project auto-created (if awarded)
+  - Feedback report sent to unsuccessful applicants
+  - Archive proposal with full audit trail
+
+---
+
+**Workflow Engine Features:**
+- **Configurable Stages:** Per program/funder requirements
+- **Step Indicators:** Always visible to applicants (e.g., "Step 2/5: Technical Review")
+- **Automated Transitions:** Based on rules engine (scores, quorum, approvals)
+- **Manual Overrides:** Grant officers can manually advance/return proposals
+- **Parallel Processing:** Multiple proposals can be at different stages simultaneously
+- **Stage-Specific Permissions:** Role-based access per stage
+- **SLA Tracking:** Automatic alerts for overdue reviews
+- **Audit Trail:** Complete history of stage transitions, decisions, actors
+- **Applicant Portal:** Real-time status dashboard with progress bar
+- **Staff Dashboard:** Pipeline view showing proposals by stage, workload distribution
+- **Conditional Routing:** Different paths based on proposal type, amount, or risk level
+- **Rollback Capability:** Return to previous stage if needed
+- **Bulk Actions:** Advance multiple proposals simultaneously (e.g., after panel meeting)
 
 **Data Model:**
 ```
 WorkflowStage
-  id, program_id, name, order, required_documents[],
-  min_score_threshold, quorum_count, coi_required, auto_advance
+  id, program_id, stage_number, stage_name, stage_type,
+  description, order, is_review_stage, review_level_id,
+  required_documents[], min_score_threshold, quorum_count,
+  required_reviewer_count, coi_required, auto_advance,
+  sla_days, parallel_allowed, terminal_stage
+
+WorkflowTransitionRule
+  id, from_stage_id, to_stage_id, condition_type,
+  condition_value, required_approvals, auto_trigger
 
 ApplicationStageHistory
   id, proposal_id, stage_id, entered_at, exited_at,
-  triggered_by, outcome, notes
+  triggered_by, trigger_type (auto/manual), outcome,
+  decision_notes, next_stage_id, sla_met
+
+StagePermission
+  id, stage_id, role, can_view, can_edit, can_approve,
+  can_return, can_reject
+
+WorkflowAlert
+  id, proposal_id, stage_id, alert_type, alert_date,
+  recipient_id, message, acknowledged_at
+```
+
+**API Endpoints:**
+```
+GET    /api/grants/workflow/stages                      # List all workflow stages
+POST   /api/grants/workflow/stages                      # Configure new stage
+GET    /api/grants/proposals/{id}/workflow/status       # Get current stage & step
+POST   /api/grants/proposals/{id}/workflow/advance      # Advance to next stage
+POST   /api/grants/proposals/{id}/workflow/return       # Return to previous stage
+GET    /api/grants/proposals/{id}/workflow/history      # Full stage history
+GET    /api/grants/workflow/pipeline                    # Pipeline dashboard data
+POST   /api/grants/workflow/bulk-advance                # Bulk stage advancement
+GET    /api/grants/workflow/alerts                      # SLA alerts & overdue items
 ```
 
 ---
 
-#### 5.2.4 Review, Scoring & COI Management
+#### 5.2.4 Multi-Level Review, Scoring & COI Management
 
-**Features:**
-- Reviewer assignment (manual or auto-assign based on expertise tags)
-- Conflict-of-interest declaration form; automatic reviewer exclusion if COI declared
-- Configurable scoring rubrics: numeric, categorical (Yes/No/Maybe), narrative
-- Weighted criteria scoring with aggregation
-- Blinded review: reviewers cannot see each other's scores until stage closes
-- Panel review consolidation: compare scores, export panel packet
-- Review status: `Assigned`, `In Progress`, `Submitted`, `Withdrawn`
-- Automated reminder emails for overdue reviews
+**Overview:**
+All proposals undergo a **multi-level review process** with clearly defined stages and progression criteria. Each review level has specific objectives, reviewers, and decision gates.
+
+**Review Levels & Workflow:**
+
+**Level 1: Administrative/Eligibility Review (Step 1)**
+- **Reviewers:** Grant Office Staff
+- **Objective:** Verify completeness, eligibility, compliance with guidelines
+- **Criteria:**
+  - All required documents submitted
+  - Applicant meets eligibility criteria
+  - Budget within allowable range
+  - Institutional endorsement present
+- **Outcome:** `Pass to Level 2` | `Return for Corrections` | `Reject (Ineligible)`
+- **Timeline:** 3-5 business days
+- **Status Indicator:** `Step 1/5: Eligibility Review`
+
+**Level 2: Technical/Scientific Review (Step 2)**
+- **Reviewers:** 2-3 Subject Matter Experts (SMEs) assigned based on expertise tags
+- **Objective:** Assess scientific merit, methodology, feasibility
+- **Criteria (Weighted Scoring Rubric):**
+  - Innovation & Originality (25%)
+  - Scientific Rigor & Methodology (25%)
+  - Feasibility & Work Plan (20%)
+  - Team Qualifications (15%)
+  - Expected Impact (15%)
+- **COI Declaration:** Required before review access
+- **Blinded Review:** Reviewers cannot see each other's scores until all submit
+- **Scoring:** 0-10 scale per criterion, weighted average calculated
+- **Minimum Score:** 70/100 to advance
+- **Outcome:** `Pass to Level 3` | `Conditional Pass (with revisions)` | `Reject (Low Score)`
+- **Timeline:** 14-21 days
+- **Status Indicator:** `Step 2/5: Technical Review`
+
+**Level 3: Budget & Financial Review (Step 3)**
+- **Reviewers:** Finance Officer + Budget Analyst
+- **Objective:** Validate budget appropriateness, cost-effectiveness
+- **Criteria:**
+  - Budget justification adequacy
+  - Cost reasonableness
+  - Alignment with proposed activities
+  - Institutional cost-sharing compliance
+  - Allowable vs. unallowable costs
+- **Outcome:** `Approve Budget` | `Request Budget Revision` | `Reject (Budget Issues)`
+- **Timeline:** 7-10 days
+- **Status Indicator:** `Step 3/5: Budget Review`
+
+**Level 4: Panel Review & Consensus (Step 4)**
+- **Reviewers:** Review Panel (5-7 members including SMEs, program officers, stakeholder representatives)
+- **Objective:** Comparative assessment, strategic alignment, final recommendation
+- **Process:**
+  - Panel members review all Level 2 & 3 scores and comments
+  - Comparative discussion of proposals in same funding round
+  - Assessment of strategic fit with institutional/funder priorities
+  - Ranking of proposals for funding
+- **Criteria:**
+  - Aggregate technical score (from Level 2)
+  - Budget score (from Level 3)
+  - Strategic alignment
+  - Portfolio balance
+  - Risk assessment
+- **Quorum:** Minimum 60% of panel members must participate
+- **Outcome:** `Recommend for Funding` | `Waitlist` | `Do Not Fund`
+- **Timeline:** Panel meeting + 3-5 days for documentation
+- **Status Indicator:** `Step 4/5: Panel Review`
+
+**Level 5: Due Diligence & Final Approval (Step 5)**
+- **Reviewers:** Grant Officer + Institutional Lead + Legal (if required)
+- **Objective:** Final checks, risk mitigation, award preparation
+- **Criteria:**
+  - Institutional capacity assessment
+  - Compliance & audit history check
+  - Legal review (if high-value or international)
+  - Risk rating assignment
+  - Award conditions determination
+- **Outcome:** `Issue Award` | `Issue Award with Conditions` | `Defer` | `Reject`
+- **Timeline:** 5-7 days
+- **Status Indicator:** `Step 5/5: Final Approval`
+
+**Post-Review: Award Notification**
+- **Status Indicator:** `Awarded` | `Not Awarded`
+- Automated notifications sent to applicants
+- Award letters generated for successful proposals
+- Feedback reports provided to unsuccessful applicants
+
+---
+
+**Review Features:**
+- **Reviewer Assignment:** Manual or auto-assign based on expertise tags, workload balancing
+- **COI Management:** Mandatory declaration at each level; automatic reviewer exclusion if COI declared
+- **Configurable Rubrics:** Numeric, categorical (Yes/No/Maybe), narrative per review level
+- **Weighted Criteria Scoring:** Customizable weights per program/funder
+- **Blinded Review:** Reviewers cannot see each other's scores until stage closes (Level 2)
+- **Panel Review Tools:** Side-by-side comparison, export panel packet, voting interface
+- **Review Status Tracking:** `Assigned`, `COI Declared`, `In Progress`, `Submitted`, `Withdrawn`, `Overdue`
+- **Automated Reminders:** Email notifications for pending reviews, approaching deadlines
+- **Audit Trail:** Complete history of all review actions, decisions, and transitions
+- **Applicant Portal:** Real-time status updates showing current step (e.g., "Step 2/5: Technical Review")
 
 **Data Model:**
 ```
+ReviewLevel
+  id, program_id, level_number, level_name, description,
+  required_reviewer_count, min_score_threshold, quorum_percentage,
+  sla_days, auto_advance_on_pass, order
+
 ReviewAssignment
-  id, proposal_id, reviewer_id, stage_id, coi_status,
-  coi_declared_at, assigned_at, status
+  id, proposal_id, reviewer_id, review_level_id, stage_id,
+  coi_status, coi_declared_at, assigned_at, due_date,
+  status, priority, workload_weight
 
 ReviewRubric
-  id, program_id, criteria[], weights[], type
+  id, program_id, review_level_id, criteria[], weights[], 
+  scoring_type (numeric/categorical/narrative), max_score
 
 Review
-  id, assignment_id, rubric_id, submitted_at, total_score, notes
+  id, assignment_id, rubric_id, submitted_at, total_score, 
+  weighted_score, recommendation, notes, time_spent_minutes
 
 ReviewScore
-  id, review_id, criterion_id, score, narrative
+  id, review_id, criterion_id, score, weight, narrative,
+  confidence_level
 
 COIDeclaration
-  id, assignment_id, has_conflict, relationship_description,
-  declared_by, declared_at
+  id, assignment_id, has_conflict, conflict_type,
+  relationship_description, declared_by, declared_at,
+  reviewed_by, resolution
+
+ReviewLevelDecision
+  id, proposal_id, review_level_id, decision,
+  decision_date, decided_by, justification,
+  next_level_id, conditions[]
+
+PanelMeeting
+  id, program_id, meeting_date, panel_members[],
+  proposals_reviewed[], quorum_met, minutes_path,
+  decisions[]
+```
+
+**API Endpoints:**
+```
+POST   /api/grants/reviews/levels                    # Configure review levels
+GET    /api/grants/reviews/proposals/{id}/status     # Get current review step
+POST   /api/grants/reviews/assign                    # Assign reviewer to level
+POST   /api/grants/reviews/{id}/coi                  # Submit COI declaration
+POST   /api/grants/reviews/{id}/submit               # Submit review
+GET    /api/grants/reviews/proposals/{id}/aggregate  # Aggregate scores across levels
+POST   /api/grants/reviews/level/{level_id}/advance  # Advance to next level
+POST   /api/grants/reviews/panel/schedule            # Schedule panel meeting
+GET    /api/grants/reviews/panel/{id}/packet         # Export panel review packet
+POST   /api/grants/reviews/level/{level_id}/decision # Record level decision
 ```
 
 ---
@@ -1493,7 +1770,1601 @@ These capabilities are required regardless of which option is chosen.
 
 ---
 
-## 9. Cross-Cutting Platform Services
+## 9. Module 5 – Performance Contracting & Institutional Effectiveness
+
+### 9.1 Overview
+
+The **Performance Contracting Module** implements the Kenyan public university performance management framework, enabling institutions to manage the complete annual performance contracting cycle from national priorities through to evaluation. The module supports:
+
+- **Government Performance Contracting** (GPCIS-aligned for Kenyan public universities)
+- **Institutional Effectiveness** tracking and reporting
+- **Cascading targets** from corporate to individual staff level
+- **Quarterly monitoring** and mid-year reviews
+- **Annual evaluation** with evidence management
+- **Integration with grants, research outputs, and financial data**
+
+This module bridges strategic planning, operational execution, and accountability reporting, ensuring alignment with:
+- National development priorities (Vision 2030, Big Four Agenda, etc.)
+- Ministry of Education requirements
+- University strategic plans and approved budgets
+- Individual staff performance appraisals
+
+---
+
+### 9.2 Performance Contracting Lifecycle
+
+The module follows the **11-stage annual cycle** mandated by Kenyan public service regulations:
+
+```
+National Priorities → Strategic Plan → Annual Targets → Draft PC → 
+Negotiation → Signing → Cascading → Implementation → Quarterly Reports → 
+Mid-Year Review → Annual Evaluation → External Moderation → Next Cycle
+```
+
+**Timeline:**
+- **July-August:** Target setting and draft preparation
+- **September:** Negotiation with Ministry of Education / PSPMU
+- **October:** Corporate PC signing
+- **October-November:** Cascading to units and staff
+- **December-September:** Implementation with quarterly reporting (Q1, Q2, Q3, Q4)
+- **March:** Mid-year review
+- **October:** Annual self-evaluation
+- **November:** External evaluation and rating
+- **December-January:** Feedback and next cycle planning
+
+---
+
+### 9.3 Sub-Modules & Features
+
+#### 9.3.1 Corporate Performance Contract Management
+
+**Features:**
+- **Target Identification:** Define institutional annual targets aligned to strategic plan
+- **Indicator Library:** Pre-configured indicators per thematic area (Teaching, Research, Finance, HR, Infrastructure, etc.)
+- **Evidence Repository:** Upload and link supporting documents per indicator
+- **GPCIS Integration:** Export/import data to Government Performance Contracting Information System
+- **Multi-Stakeholder Review:** Internal review workflow before submission
+- **Version Control:** Track draft versions, amendments, and final signed contract
+- **Signatory Management:** Digital signatures from VC, Council Chair, Ministry officials
+- **Compliance Checklist:** Ensure all mandatory indicators and evidence are included
+
+**Thematic Areas (Kenyan University PC Standard):**
+1. Teaching & Learning (student enrollment, graduation rates, quality assurance)
+2. Research & Innovation (publications, patents, grants, collaborations)
+3. Financial Management (budget execution, revenue generation, audit compliance)
+4. Human Resource Management (staff development, performance appraisals, welfare)
+5. Infrastructure & ICT (facilities, digitalization, connectivity)
+6. Student Welfare & Services (accommodation, health, sports, counseling)
+7. Community Engagement & Outreach (partnerships, extension services, public lectures)
+8. Governance & Compliance (policies, risk management, legal compliance)
+
+**Data Model:**
+```
+PerformanceContract
+  id, institution_id, contract_year, contract_type (CORPORATE/UNIT/INDIVIDUAL),
+  status (DRAFT/SUBMITTED/NEGOTIATION/SIGNED/ACTIVE/EVALUATED),
+  strategic_plan_id, budget_id, parent_contract_id (for cascading),
+  signed_date, signed_by[], ministry_signatory, council_signatory,
+  final_rating, evaluation_date, created_at, updated_at
+
+PerformanceIndicator
+  id, contract_id, thematic_area, indicator_code, indicator_name,
+  description, measurement_unit, baseline_value, target_value,
+  weight_percentage, data_source, responsible_officer_id,
+  verification_method, reporting_frequency
+
+IndicatorTarget
+  id, indicator_id, quarter (Q1/Q2/Q3/Q4/ANNUAL), target_value,
+  actual_value, achievement_percentage, status, evidence_ids[]
+
+EvidenceDocument
+  id, indicator_id, document_type, file_path, uploaded_by,
+  upload_date, verification_status, verified_by, notes
+```
+
+---
+
+#### 9.3.2 Cascading & Unit Performance Contracts
+
+**Features:**
+- **Hierarchical Cascading:** Corporate → DVC/Director → Dean/HOD → Unit Head → Individual Staff
+- **Target Allocation:** Distribute corporate targets to units based on mandate and capacity
+- **Unit Work Plans:** Each unit creates annual work plan aligned to corporate PC
+- **Responsibility Assignment:** Assign specific indicators to units and officers
+- **Approval Workflow:** Unit contracts reviewed and approved by supervisors
+- **Consolidation:** Roll-up unit performance to corporate level
+- **Alignment Validation:** Ensure unit targets sum to corporate targets
+
+**Cascading Levels:**
+1. **Corporate Level:** University-wide contract with Ministry
+2. **Division Level:** DVCs, Registrars, Directors (Academic Affairs, Finance, HR, etc.)
+3. **Faculty/School Level:** Deans and Faculty Boards
+4. **Department Level:** Heads of Department
+5. **Unit/Center Level:** Research centers, institutes, service units
+6. **Individual Level:** Staff performance appraisals
+
+**Data Model:**
+```
+CascadingRule
+  id, from_level, to_level, allocation_method (PROPORTIONAL/MANUAL/FORMULA),
+  formula, approval_required, auto_cascade
+
+UnitContract
+  id, parent_contract_id, unit_id, unit_type, unit_head_id,
+  status, targets[], approved_by, approved_date
+
+TargetAllocation
+  id, corporate_indicator_id, unit_contract_id, allocated_target,
+  allocation_percentage, justification, approved
+```
+
+---
+
+#### 9.3.3 Academic Staff Performance Indicators
+
+**Features:**
+- **Research Output Tracking:** Auto-link publications from Research Module
+- **Grant Performance:** Auto-pull grant data (proposals submitted, awards won, grant value)
+- **Supervision Metrics:** Track Masters/PhD students supervised (from Research Module)
+- **MoU & Partnerships:** Record collaborations and partnership agreements
+- **Outreach Activities:** Log community engagement, extension services, consultancies
+- **Teaching Load:** Credit hours taught, student evaluations, curriculum development
+- **Professional Development:** Trainings attended, certifications earned
+- **Service & Governance:** Committee memberships, administrative roles
+
+**Academic Staff Indicator Categories:**
+1. **Research & Scholarship (40%)**
+   - Peer-reviewed publications (journal articles, books, chapters)
+   - Conference presentations
+   - Research grants (applications submitted, awards won, total value)
+   - Patents, innovations, commercialization
+   - Research collaborations (MoUs, joint projects)
+
+2. **Teaching & Mentorship (30%)**
+   - Teaching load (credit hours, courses taught)
+   - Student supervision (Masters, PhD completions)
+   - Curriculum development
+   - Student evaluation scores
+   - Teaching innovations (e-learning, new methods)
+
+3. **Community Engagement & Outreach (15%)**
+   - Extension services
+   - Consultancy projects
+   - Public lectures and media engagement
+   - Industry partnerships
+   - Policy briefs and advisory roles
+
+4. **Professional Development & Service (15%)**
+   - Trainings and certifications
+   - Committee service (departmental, faculty, university)
+   - Peer review and editorial work
+   - Professional association leadership
+
+**Data Model:**
+```
+StaffPerformanceContract
+  id, staff_id, contract_year, department_id, designation,
+  status, total_score, rating, supervisor_id, approved_date
+
+StaffIndicator
+  id, staff_contract_id, category, indicator_name, weight,
+  target_value, actual_value, achievement_percentage,
+  evidence_type, auto_populated (from Research/Grant modules)
+
+StaffPublication
+  id, staff_contract_id, publication_id (from Research Module),
+  contribution_type (AUTHOR/CO_AUTHOR), impact_factor,
+  points_awarded
+
+StaffGrant
+  id, staff_contract_id, grant_id (from Grant Module),
+  role (PI/CO_PI/COLLABORATOR), grant_value, points_awarded
+
+StaffSupervision
+  id, staff_contract_id, student_id, degree_level (MASTERS/PHD),
+  status (ONGOING/COMPLETED), completion_date, points_awarded
+```
+
+---
+
+#### 9.3.4 Quarterly Monitoring & Reporting
+
+**Features:**
+- **Quarterly Data Collection:** Units submit progress updates and evidence each quarter
+- **Progress Dashboard:** Real-time visualization of achievement vs. targets
+- **Variance Analysis:** Identify underperforming indicators and bottlenecks
+- **Automated Reminders:** Email alerts for upcoming reporting deadlines
+- **Consolidation Workflow:** Unit reports roll up to corporate report
+- **Ministry Submission:** Generate quarterly report in GPCIS format
+- **Trend Analysis:** Compare quarterly performance across years
+
+**Reporting Cycle:**
+- **Q1 Report:** October-December (due mid-January)
+- **Q2 Report:** January-March (due mid-April) + **Mid-Year Review**
+- **Q3 Report:** April-June (due mid-July)
+- **Q4 Report:** July-September (due mid-October) + **Annual Evaluation**
+
+**Data Model:**
+```
+QuarterlyReport
+  id, contract_id, quarter, report_year, submission_date,
+  submitted_by, status (DRAFT/SUBMITTED/APPROVED/RETURNED),
+  overall_achievement_percentage, approved_by, approved_date
+
+QuarterlyIndicatorProgress
+  id, quarterly_report_id, indicator_id, target_value,
+  actual_value, achievement_percentage, variance,
+  challenges, corrective_actions, evidence_ids[]
+
+ProgressAlert
+  id, indicator_id, alert_type (UNDERPERFORMANCE/OVERDUE/MISSING_EVIDENCE),
+  threshold_breached, alert_date, acknowledged_by, resolved
+```
+
+---
+
+#### 9.3.5 Mid-Year Review & Corrective Actions
+
+**Features:**
+- **Mid-Year Assessment:** Comprehensive review at Q2 (March)
+- **Performance Analysis:** Identify indicators at risk of not meeting annual targets
+- **Bottleneck Identification:** Document challenges and constraints
+- **Corrective Action Plans:** Define interventions and resource reallocation
+- **Target Adjustment:** Revise targets if justified (with approval)
+- **Stakeholder Meeting:** Facilitate mid-year review meetings with units
+- **Action Tracking:** Monitor implementation of corrective actions
+
+**Data Model:**
+```
+MidYearReview
+  id, contract_id, review_date, conducted_by, participants[],
+  overall_status, at_risk_indicators[], bottlenecks[],
+  corrective_actions[], target_adjustments[], approved_by
+
+CorrectiveAction
+  id, mid_year_review_id, indicator_id, issue_description,
+  proposed_action, responsible_officer_id, deadline,
+  resources_required, status, completion_date
+
+TargetAdjustment
+  id, mid_year_review_id, indicator_id, original_target,
+  revised_target, justification, approved_by, approved_date
+```
+
+---
+
+#### 9.3.6 Annual Self-Evaluation & Evidence Management
+
+**Features:**
+- **Self-Evaluation Report:** Comprehensive annual performance report
+- **Evidence Compilation:** Organize all supporting documents per indicator
+- **Achievement Calculation:** Auto-calculate achievement percentages
+- **Scoring Matrix:** Apply scoring rubric per indicator
+- **Narrative Reporting:** Capture qualitative achievements and challenges
+- **Internal Rating:** Preliminary self-assessment rating
+- **Evidence Verification:** Internal audit of evidence completeness and authenticity
+- **Report Export:** Generate PDF report for submission to Ministry
+
+**Scoring Rubric (Standard Kenyan PC):**
+- **Excellent:** ≥ 90% achievement
+- **Very Good:** 80-89% achievement
+- **Good:** 70-79% achievement
+- **Fair:** 60-69% achievement
+- **Unsatisfactory:** < 60% achievement
+
+**Data Model:**
+```
+AnnualEvaluation
+  id, contract_id, evaluation_year, submission_date,
+  overall_achievement_percentage, self_rating,
+  narrative_report, challenges[], lessons_learned[],
+  recommendations[], submitted_by, internal_audit_status
+
+IndicatorEvaluation
+  id, annual_evaluation_id, indicator_id, target_value,
+  actual_value, achievement_percentage, score,
+  evidence_summary, verification_status, verified_by
+
+EvidencePack
+  id, annual_evaluation_id, indicator_id, documents[],
+  compiled_by, compilation_date, audit_status, auditor_notes
+```
+
+---
+
+#### 9.3.7 External Evaluation & Rating
+
+**Features:**
+- **Ministry Evaluation:** Receive and record external evaluation from Ministry/PSPMU
+- **Moderation Process:** Track evaluation meetings and site visits
+- **Final Rating:** Record official performance rating
+- **Feedback Management:** Capture evaluator comments and recommendations
+- **Comparative Analysis:** Benchmark against peer universities
+- **Rating History:** Track performance trends over years
+- **Improvement Planning:** Use feedback to inform next cycle targets
+
+**Data Model:**
+```
+ExternalEvaluation
+  id, contract_id, evaluation_date, evaluator_agency,
+  evaluators[], site_visit_date, final_rating,
+  overall_score, thematic_scores{}, evaluator_comments,
+  recommendations[], comparative_ranking, approved_by
+
+EvaluationFeedback
+  id, external_evaluation_id, indicator_id, evaluator_score,
+  evaluator_comments, areas_of_strength[], areas_for_improvement[]
+
+RatingHistory
+  id, institution_id, contract_year, final_rating, overall_score,
+  rank_among_peers, improvement_from_previous_year
+```
+
+---
+
+### 9.4 Integration with Other DACORIS Modules
+
+#### 9.4.1 Grant Module Integration
+
+**Auto-Populated Indicators:**
+- Number of grant proposals submitted
+- Number of grants awarded
+- Total grant funding secured (by currency)
+- Grant success rate (%)
+- Active grants per year
+- Grant expenditure vs. budget
+
+**Data Flow:**
+```
+Grant Module → Performance Contracting
+- proposal_submitted EVENT → increment "Proposals Submitted" indicator
+- award_issued EVENT → increment "Grants Awarded" + add grant value
+- disbursement_made EVENT → update "Grant Expenditure" indicator
+```
+
+---
+
+#### 9.4.2 Research Module Integration
+
+**Auto-Populated Indicators:**
+- Number of publications (by type: journal, book, chapter, conference)
+- Number of students supervised (Masters, PhD)
+- Number of student completions
+- Number of MoUs signed
+- Number of patents filed/granted
+- Number of research projects registered
+
+**Data Flow:**
+```
+Research Module → Performance Contracting
+- publication_registered EVENT → increment publication count per staff
+- student_graduated EVENT → update supervision completion metrics
+- mou_signed EVENT → increment partnership indicator
+- patent_filed EVENT → update innovation metrics
+```
+
+---
+
+#### 9.4.3 Financial System Integration
+
+**Auto-Populated Indicators:**
+- Budget execution rate (%)
+- Revenue collection vs. target
+- Expenditure by category
+- Audit compliance status
+- Financial sustainability ratios
+
+**Data Flow:**
+```
+Finance System → Performance Contracting
+- Monthly budget reports → update expenditure indicators
+- Revenue collection data → update income generation metrics
+- Audit reports → update compliance indicators
+```
+
+---
+
+### 9.5 Workflows & Flowcharts
+
+#### 9.5.1 Annual Performance Contracting Cycle
+
+```mermaid
+flowchart TD
+    A[July: National Priorities\nGovernment Guidelines\nMOE Requirements] --> B[August: University Strategic Plan\nApproved Budget\nAnnual Work Plan]
+    
+    B --> C1[Step 1: TARGET IDENTIFICATION\nInstitutional targets defined\nAligned to mandate & strategy]
+    
+    C1 --> C2[Step 2: DRAFT CORPORATE PC\nPrepared in GPCIS system\nEvidence documents assembled\nIndicators configured]
+    
+    C2 --> C3[Step 3: NEGOTIATION & VETTING\nMinistry of Education review\nPSPMU review\nSpecialized agencies input]
+    
+    C3 --> C4{Vetting\noutcome?}
+    C4 -- Revisions required --> C5[Revise targets\nUpdate evidence\nResubmit]
+    C5 --> C3
+    C4 -- Approved --> D1[Step 4: CORPORATE PC SIGNING\nVC signature\nCouncil Chair signature\nMinistry signatory\nWitnesses]
+    
+    D1 --> E1[Step 5: CASCADING WITHIN UNIVERSITY\nCouncil/Chair → VC\nVC → DVCs/Directors\nDVCs → Deans/HODs\nHODs → Staff]
+    
+    E1 --> E2[Unit contracts created\nTargets allocated\nResponsibilities assigned]
+    
+    E2 --> E3[Individual staff work plans\nPerformance appraisals linked]
+    
+    E3 --> F1[Step 6: IMPLEMENTATION\nOct-Sep: Execute targets\nTeaching | Research | Innovation\nFinance | HR | Infrastructure]
+    
+    F1 --> G1[Step 7: QUARTERLY MONITORING\nQ1: Oct-Dec\nQ2: Jan-Mar\nQ3: Apr-Jun\nQ4: Jul-Sep]
+    
+    G1 --> G2[Units submit evidence\nProgress updates\nQuarterly reports]
+    
+    G2 --> G3[University consolidates\nSubmits to Ministry]
+    
+    G3 --> H1{Quarter?}
+    H1 -- Q1 --> G1
+    H1 -- Q2 --> I1[Step 8: MID-YEAR REVIEW\nMarch: Progress checked\nBottlenecks identified\nCorrectiveactions agreed]
+    I1 --> G1
+    H1 -- Q3 --> G1
+    H1 -- Q4 --> J1[Step 9: ANNUAL SELF-EVALUATION\nOct: Compile internal report\nOrganize evidence\nCalculate achievement %]
+    
+    J1 --> J2[Evidence verification\nInternal audit\nSelf-rating assigned]
+    
+    J2 --> K1[Step 10: EXTERNAL EVALUATION\nNov: Ministry evaluates\nSite visit conducted\nEvidence moderated]
+    
+    K1 --> K2[Final rating assigned:\nExcellent ≥90%\nVery Good 80-89%\nGood 70-79%\nFair 60-69%\nUnsatisfactory <60%]
+    
+    K2 --> L1[Step 11: FEEDBACK & NEXT CYCLE\nDec-Jan: Results communicated\nRecommendations reviewed\nNext year targets informed]
+    
+    L1 --> A
+    
+    style D1 fill:#2ecc71,color:#fff
+    style K2 fill:#3498db,color:#fff
+    style I1 fill:#f39c12,color:#fff
+    style C5 fill:#e74c3c,color:#fff
+```
+
+---
+
+#### 9.5.2 Target Cascading Workflow
+
+```mermaid
+flowchart TD
+    A[Corporate PC Signed\nInstitutional targets approved] --> B[CASCADING INITIATED\nby VC Office]
+    
+    B --> C1[Level 1: DIVISION LEVEL\nDVCs, Registrars, Directors]
+    C1 --> C2[Corporate targets allocated\nto divisions]
+    C2 --> C3{Division Head\napproves?}
+    C3 -- Revise --> C4[Negotiate allocation\nAdjust targets]
+    C4 --> C2
+    C3 -- Approve --> D1[Division contract created\nStatus: APPROVED]
+    
+    D1 --> E1[Level 2: FACULTY/SCHOOL LEVEL\nDeans, Faculty Boards]
+    E1 --> E2[Division targets allocated\nto faculties]
+    E2 --> E3{Dean\napproves?}
+    E3 -- Revise --> E4[Negotiate allocation\nAdjust targets]
+    E4 --> E2
+    E3 -- Approve --> F1[Faculty contract created\nStatus: APPROVED]
+    
+    F1 --> G1[Level 3: DEPARTMENT LEVEL\nHeads of Department]
+    G1 --> G2[Faculty targets allocated\nto departments]
+    G2 --> G3{HOD\napproves?}
+    G3 -- Revise --> G4[Negotiate allocation\nAdjust targets]
+    G4 --> G2
+    G3 -- Approve --> H1[Department contract created\nStatus: APPROVED]
+    
+    H1 --> I1[Level 4: INDIVIDUAL STAFF\nAcademic & Admin staff]
+    I1 --> I2[Department targets allocated\nto individual staff]
+    I2 --> I3[Staff work plan created:\nResearch targets\nTeaching load\nService commitments]
+    
+    I3 --> I4{Staff\nacknowledges?}
+    I4 -- Dispute --> I5[Supervisor review\nMediation]
+    I5 --> I2
+    I4 -- Accept --> J1[Staff contract signed\nPerformance appraisal linked]
+    
+    J1 --> K1[CASCADING COMPLETE\nAll levels aligned\nImplementation begins]
+    
+    K1 --> L1[Validation check:\nUnit targets sum to\ncorporate targets]
+    
+    L1 --> L2{Alignment\nvalid?}
+    L2 -- Gaps identified --> L3[Reallocate targets\nResolve discrepancies]
+    L3 --> C2
+    L2 -- Valid --> M1[Cascading finalized\nMonitoring begins]
+    
+    style D1 fill:#2ecc71,color:#fff
+    style F1 fill:#2ecc71,color:#fff
+    style H1 fill:#2ecc71,color:#fff
+    style J1 fill:#2ecc71,color:#fff
+    style M1 fill:#3498db,color:#fff
+```
+
+---
+
+#### 9.5.3 Academic Staff Performance Tracking
+
+```mermaid
+flowchart TD
+    A[Staff Performance Contract\nAnnual targets set] --> B[RESEARCH & SCHOLARSHIP 40%]
+    
+    B --> B1[Publications target:\ne.g., 3 peer-reviewed articles]
+    B1 --> B2{Publication\nregistered in\nResearch Module?}
+    B2 -- Yes --> B3[Auto-populate:\nIncrement publication count\nCalculate impact factor points]
+    B2 -- No --> B4[Manual entry:\nStaff uploads evidence\nVerification required]
+    B3 --> B5
+    B4 --> B5[Publication count updated]
+    
+    B --> B6[Grants target:\ne.g., 2 proposals, 1 award, KES 5M]
+    B6 --> B7{Grant activity\nin Grant Module?}
+    B7 -- Yes --> B8[Auto-populate:\nProposals submitted\nAwards won\nGrant value]
+    B7 -- No --> B9[Manual entry:\nStaff uploads evidence]
+    B8 --> B10
+    B9 --> B10[Grant metrics updated]
+    
+    B --> B11[Supervision target:\ne.g., 2 Masters, 1 PhD]
+    B11 --> B12{Students\nregistered in\nResearch Module?}
+    B12 -- Yes --> B13[Auto-populate:\nOngoing supervisions\nCompletions]
+    B12 -- No --> B14[Manual entry:\nStaff uploads evidence]
+    B13 --> B15
+    B14 --> B15[Supervision count updated]
+    
+    B5 --> C1
+    B10 --> C1
+    B15 --> C1[Research score calculated\n40% weight applied]
+    
+    C1 --> D1[TEACHING & MENTORSHIP 30%]
+    D1 --> D2[Teaching load\nStudent evaluations\nCurriculum development]
+    D2 --> D3[Manual entry from\nAcademic Registry]
+    D3 --> D4[Teaching score calculated\n30% weight applied]
+    
+    D4 --> E1[COMMUNITY ENGAGEMENT 15%]
+    E1 --> E2[Outreach activities\nConsultancies\nPublic lectures]
+    E2 --> E3[Manual entry:\nStaff logs activities\nEvidence uploaded]
+    E3 --> E4[Engagement score calculated\n15% weight applied]
+    
+    E4 --> F1[PROFESSIONAL DEVELOPMENT 15%]
+    F1 --> F2[Trainings attended\nCommittee service\nProfessional roles]
+    F2 --> F3[Manual entry:\nStaff logs activities]
+    F3 --> F4[Development score calculated\n15% weight applied]
+    
+    F4 --> G1[TOTAL SCORE CALCULATION\nWeighted average:\n40% + 30% + 15% + 15%]
+    
+    G1 --> G2{Total score?}
+    G2 -- ≥90% --> G3[Rating: EXCELLENT]
+    G2 -- 80-89% --> G4[Rating: VERY GOOD]
+    G2 -- 70-79% --> G5[Rating: GOOD]
+    G2 -- 60-69% --> G6[Rating: FAIR]
+    G2 -- <60% --> G7[Rating: UNSATISFACTORY]
+    
+    G3 --> H1
+    G4 --> H1
+    G5 --> H1
+    G6 --> H1
+    G7 --> H1[Supervisor review\nAppraisal meeting\nFeedback provided]
+    
+    H1 --> H2[Staff acknowledges\nPerformance appraisal signed]
+    
+    H2 --> I1[Performance data feeds:\nPromotion decisions\nTraining needs\nReward/recognition\nNext year targets]
+    
+    style G3 fill:#2ecc71,color:#fff
+    style G4 fill:#27ae60,color:#fff
+    style G5 fill:#f39c12,color:#fff
+    style G6 fill:#e67e22,color:#fff
+    style G7 fill:#e74c3c,color:#fff
+    style B3 fill:#3498db,color:#fff
+    style B8 fill:#3498db,color:#fff
+    style B13 fill:#3498db,color:#fff
+```
+
+---
+
+### 9.6 API Endpoints
+
+```
+# Corporate Performance Contracts
+POST   /api/performance/contracts                          # Create new contract
+GET    /api/performance/contracts/{id}                     # Get contract details
+PUT    /api/performance/contracts/{id}                     # Update contract
+POST   /api/performance/contracts/{id}/submit              # Submit for negotiation
+POST   /api/performance/contracts/{id}/sign                # Record signatures
+GET    /api/performance/contracts/{id}/status              # Get workflow status
+
+# Indicators & Targets
+POST   /api/performance/contracts/{id}/indicators          # Add indicator
+GET    /api/performance/indicators/{id}                    # Get indicator details
+PUT    /api/performance/indicators/{id}/target             # Update target
+POST   /api/performance/indicators/{id}/evidence           # Upload evidence
+
+# Cascading
+POST   /api/performance/contracts/{id}/cascade             # Initiate cascading
+GET    /api/performance/contracts/{id}/children            # Get child contracts
+POST   /api/performance/cascade/allocate                   # Allocate targets to units
+GET    /api/performance/cascade/validation                 # Validate alignment
+
+# Quarterly Reporting
+POST   /api/performance/reports/quarterly                  # Create quarterly report
+GET    /api/performance/reports/quarterly/{id}             # Get report
+POST   /api/performance/reports/quarterly/{id}/submit      # Submit report
+GET    /api/performance/reports/quarterly/pending          # Get pending reports
+
+# Mid-Year Review
+POST   /api/performance/reviews/midyear                    # Create mid-year review
+POST   /api/performance/reviews/midyear/{id}/actions       # Add corrective actions
+POST   /api/performance/reviews/midyear/{id}/adjustments   # Request target adjustments
+
+# Annual Evaluation
+POST   /api/performance/evaluations/annual                 # Create annual evaluation
+POST   /api/performance/evaluations/{id}/evidence-pack     # Compile evidence
+POST   /api/performance/evaluations/{id}/submit            # Submit for external review
+POST   /api/performance/evaluations/{id}/external-rating   # Record external rating
+
+# Staff Performance
+GET    /api/performance/staff/{staff_id}/contract          # Get staff contract
+POST   /api/performance/staff/{staff_id}/indicators        # Add staff indicators
+GET    /api/performance/staff/{staff_id}/auto-metrics      # Get auto-populated metrics
+POST   /api/performance/staff/{staff_id}/appraisal         # Submit appraisal
+
+# Analytics & Dashboards
+GET    /api/performance/dashboard/corporate                # Corporate dashboard
+GET    /api/performance/dashboard/unit/{unit_id}           # Unit dashboard
+GET    /api/performance/analytics/trends                   # Performance trends
+GET    /api/performance/analytics/benchmarking             # Peer comparison
+GET    /api/performance/analytics/at-risk                  # At-risk indicators
+
+# GPCIS Integration
+POST   /api/performance/gpcis/export                       # Export to GPCIS format
+POST   /api/performance/gpcis/import                       # Import from GPCIS
+```
+
+---
+
+### 9.7 Implementation Phases
+
+#### Phase PC1: Foundation (Weeks 1-4)
+- [ ] Database schema for contracts, indicators, targets
+- [ ] Corporate contract CRUD APIs
+- [ ] Indicator library configuration
+- [ ] Evidence upload and management
+- [ ] Basic reporting dashboard
+
+#### Phase PC2: Cascading & Units (Weeks 5-8)
+- [ ] Cascading workflow engine
+- [ ] Unit contract management
+- [ ] Target allocation algorithms
+- [ ] Approval workflows
+- [ ] Alignment validation
+
+#### Phase PC3: Staff Performance (Weeks 9-12)
+- [ ] Staff contract management
+- [ ] Academic staff indicator templates
+- [ ] Auto-population from Grant & Research modules
+- [ ] Manual entry interfaces
+- [ ] Performance appraisal workflow
+
+#### Phase PC4: Monitoring & Reporting (Weeks 13-16)
+- [ ] Quarterly reporting system
+- [ ] Progress tracking dashboards
+- [ ] Automated reminders and alerts
+- [ ] Mid-year review tools
+- [ ] Corrective action tracking
+
+#### Phase PC5: Evaluation & Integration (Weeks 17-20)
+- [ ] Annual evaluation workflow
+- [ ] Evidence pack compilation
+- [ ] External evaluation recording
+- [ ] Rating and feedback management
+- [ ] GPCIS export/import connectors
+- [ ] Analytics and benchmarking
+
+---
+
+### 9.8 Frontend Implementation
+
+- [ ] Corporate PC management console (admin)
+- [ ] Indicator configuration interface
+- [ ] Evidence upload and verification UI
+- [ ] Cascading wizard with drag-drop target allocation
+- [ ] Unit contract dashboard
+- [ ] Staff performance portal (self-service)
+- [ ] Quarterly reporting forms
+- [ ] Mid-year review interface
+- [ ] Annual evaluation workspace
+- [ ] Performance analytics dashboards
+- [ ] Comparative benchmarking charts
+- [ ] Mobile-responsive progress tracking
+
+---
+
+## 10. Module 6 – Training & Capacity Building with AI
+
+### 10.1 Overview
+
+The **Training & Capacity Building Module** provides a comprehensive learning management system (LMS) integrated with AI-powered tools to support researcher development, postgraduate training, and institutional capacity building. Inspired by the DigiGrad Africa project and NECREDI network, this module enables universities to:
+
+- **Deliver structured training programs** for young researchers, supervisors, and staff
+- **Leverage AI** for personalized learning, content generation, and assessment
+- **Build research capacity** in digitalization, internationalization, and methodologies
+- **Foster communities of practice** for early-career researchers
+- **Track competency development** and learning outcomes
+- **Integrate with research and grant modules** for contextualized training
+
+This module bridges the gap between traditional LMS platforms (like Moodle) and modern AI-enhanced learning experiences, while maintaining tight integration with DACORIS research workflows.
+
+---
+
+### 10.2 Training Categories & Target Audiences
+
+#### 10.2.1 Young Researchers & Postgraduate Students
+
+**Training Tracks:**
+
+1. **Research Methodologies**
+   - Quantitative research methods
+   - Qualitative research methods
+   - Mixed methods approaches
+   - Data collection techniques
+   - Sampling strategies
+   - Research ethics and integrity
+
+2. **Scientific Writing & Communication**
+   - Academic writing fundamentals
+   - Literature review techniques
+   - Manuscript preparation
+   - Thesis/dissertation writing
+   - Scientific presentation skills
+   - Grant proposal writing
+
+3. **Digital Skills for Research**
+   - Reference management (Zotero, Mendeley, EndNote)
+   - Data analysis tools (R, Python, SPSS, NVivo)
+   - Research data management
+   - Digital collaboration tools
+   - Open science practices
+   - ORCID and researcher profiles
+
+4. **Project & Time Management**
+   - PhD/Masters project planning
+   - Time management for researchers
+   - Milestone tracking
+   - Work-life balance
+   - Stress management
+   - Academic productivity tools
+
+5. **Internationalization & Collaboration**
+   - International research partnerships
+   - Cross-cultural collaboration
+   - Virtual teamwork
+   - Conference participation
+   - Networking strategies
+   - Mobility and exchange programs
+
+---
+
+#### 10.2.2 Research Supervisors & Faculty
+
+**Training Tracks:**
+
+1. **Postgraduate Supervision**
+   - Effective supervision practices
+   - Student-supervisor relationships
+   - Feedback and mentoring
+   - Conflict resolution
+   - Ethical supervision
+   - Remote supervision techniques
+
+2. **Research Leadership**
+   - Building research teams
+   - Grant management for PIs
+   - Research strategy development
+   - Collaboration and partnerships
+   - Research impact and dissemination
+   - Intellectual property management
+
+3. **Digital Tools for Supervision**
+   - Online supervision platforms
+   - Progress tracking systems
+   - Digital feedback tools
+   - Virtual meeting best practices
+   - Collaborative writing tools
+   - Assessment technologies
+
+---
+
+#### 10.2.3 Institutional Staff (IRO, Grant Officers, Research Managers)
+
+**Training Tracks:**
+
+1. **Research Administration**
+   - Grant lifecycle management
+   - Compliance and regulations
+   - Budget management
+   - Reporting requirements
+   - Audit preparation
+   - Risk management
+
+2. **Internationalization Management**
+   - Partnership development
+   - MoU negotiation
+   - Mobility program management
+   - International funding opportunities
+   - Cross-border collaboration
+   - Quality assurance
+
+3. **Digital Transformation**
+   - CRIS/RIMS implementation
+   - Data management systems
+   - Workflow automation
+   - Analytics and reporting
+   - Change management
+   - User training and support
+
+---
+
+### 10.3 AI-Enhanced Learning Features
+
+#### 10.3.1 AI-Powered Content Generation
+
+**Features:**
+- **Course Material Generation:** AI creates course outlines, lesson plans, and learning objectives based on topic input
+- **Reading Material Summarization:** AI summarizes research papers and textbooks into digestible learning content
+- **Quiz & Assessment Generation:** Automatically generate quizzes, MCQs, and assignments from course content
+- **Case Study Creation:** AI generates contextual case studies based on African research scenarios
+- **Translation & Localization:** Auto-translate content into multiple languages (English, French, Swahili, etc.)
+
+**AI Models:**
+- GPT-4 / Claude for content generation
+- Specialized academic AI models for research content
+- Custom fine-tuned models on African research context
+
+**Data Model:**
+```
+AIGeneratedContent
+  id, content_type (LESSON/QUIZ/CASE_STUDY/SUMMARY),
+  source_material_id, prompt_used, ai_model,
+  generated_content, reviewed_by, approved,
+  quality_score, usage_count, feedback_rating
+
+ContentGenerationPrompt
+  id, template_name, prompt_template, parameters[],
+  ai_model, temperature, max_tokens, examples[]
+```
+
+---
+
+#### 10.3.2 Personalized Learning Paths
+
+**Features:**
+- **Competency Assessment:** AI analyzes learner's current skills and knowledge gaps
+- **Adaptive Learning:** Course difficulty adjusts based on learner performance
+- **Personalized Recommendations:** AI suggests courses, resources, and activities
+- **Learning Style Detection:** Identifies visual, auditory, or kinesthetic preferences
+- **Progress Prediction:** AI predicts completion time and success probability
+- **Intervention Alerts:** Flags at-risk learners for instructor intervention
+
+**AI Algorithms:**
+- Collaborative filtering for course recommendations
+- Neural networks for performance prediction
+- NLP for learning style analysis from forum posts
+- Reinforcement learning for adaptive difficulty
+
+**Data Model:**
+```
+LearnerProfile
+  id, user_id, learning_style, competency_levels{},
+  preferred_pace, interests[], career_goals[],
+  strengths[], weaknesses[], last_assessment_date
+
+PersonalizedLearningPath
+  id, learner_id, target_competencies[], 
+  recommended_courses[], current_course_id,
+  progress_percentage, estimated_completion_date,
+  ai_confidence_score, path_effectiveness_rating
+
+CompetencyAssessment
+  id, learner_id, assessment_date, competencies_tested[],
+  scores{}, proficiency_levels{}, gaps_identified[],
+  recommended_actions[], ai_analysis
+```
+
+---
+
+#### 10.3.3 AI Teaching Assistant (Chatbot)
+
+**Features:**
+- **24/7 Q&A Support:** AI answers learner questions about course content
+- **Concept Explanation:** Breaks down complex research concepts
+- **Code Help:** Assists with R, Python, SPSS code for data analysis courses
+- **Writing Feedback:** Provides preliminary feedback on academic writing
+- **Citation Help:** Guides proper citation and referencing
+- **Study Tips:** Offers personalized study strategies
+- **Multilingual Support:** Responds in learner's preferred language
+
+**Capabilities:**
+- Retrieval-Augmented Generation (RAG) using course materials as knowledge base
+- Context-aware responses based on learner's progress
+- Escalation to human instructors for complex queries
+- Learning from instructor corrections
+
+**Data Model:**
+```
+AIAssistantConversation
+  id, learner_id, course_id, session_id,
+  messages[], started_at, ended_at,
+  escalated_to_instructor, satisfaction_rating
+
+AIAssistantMessage
+  id, conversation_id, sender (LEARNER/AI/INSTRUCTOR),
+  message_text, ai_confidence, sources_cited[],
+  feedback (HELPFUL/NOT_HELPFUL), timestamp
+
+AIKnowledgeBase
+  id, course_id, content_type, content_text,
+  embeddings, metadata{}, last_updated,
+  usage_count, effectiveness_score
+```
+
+---
+
+#### 10.3.4 Automated Assessment & Feedback
+
+**Features:**
+- **Essay Grading:** AI evaluates written assignments for structure, coherence, argumentation
+- **Code Assessment:** Automatically tests and grades programming assignments
+- **Plagiarism Detection:** AI-powered similarity checking
+- **Rubric-Based Scoring:** Applies grading rubrics consistently
+- **Instant Feedback:** Provides formative feedback on submissions
+- **Peer Review Matching:** AI matches learners for peer assessment
+- **Proctoring:** AI-based exam monitoring for online assessments
+
+**AI Models:**
+- NLP models for essay evaluation
+- Code execution and testing frameworks
+- Computer vision for proctoring
+- Similarity detection algorithms
+
+**Data Model:**
+```
+AIAssessment
+  id, submission_id, assessment_type,
+  ai_score, ai_feedback, rubric_scores{},
+  confidence_level, human_review_required,
+  final_score, reviewed_by, review_notes
+
+AssessmentRubric
+  id, assignment_id, criteria[], weights[],
+  scoring_levels[], ai_evaluation_enabled,
+  human_override_allowed
+
+PlagiarismCheck
+  id, submission_id, similarity_percentage,
+  matched_sources[], flagged_sections[],
+  ai_analysis, reviewed_by, action_taken
+```
+
+---
+
+#### 10.3.5 Research Writing Assistant
+
+**Features:**
+- **Literature Review Helper:** AI suggests relevant papers based on research topic
+- **Outline Generator:** Creates structured outlines for thesis chapters
+- **Paraphrasing Tool:** Helps rephrase text while maintaining meaning
+- **Grammar & Style Checker:** Advanced proofreading beyond basic spell-check
+- **Citation Generator:** Auto-generates citations in any style (APA, MLA, Chicago, Harvard)
+- **Coherence Analysis:** Checks logical flow and argument structure
+- **Readability Scoring:** Assesses text complexity and suggests improvements
+
+**Integration:**
+- Links to Research Module for accessing user's publications
+- Connects to Grant Module for proposal writing support
+- Integrates with reference management tools
+
+**Data Model:**
+```
+WritingAssistanceSession
+  id, user_id, document_type (THESIS/PAPER/PROPOSAL),
+  document_text, ai_suggestions[], applied_suggestions[],
+  writing_quality_score, improvement_metrics{},
+  session_duration, satisfaction_rating
+
+AIWritingSuggestion
+  id, session_id, suggestion_type,
+  original_text, suggested_text, rationale,
+  confidence_score, accepted, user_feedback
+```
+
+---
+
+#### 10.3.6 Predictive Analytics for Learning Outcomes
+
+**Features:**
+- **Dropout Prediction:** Identifies learners at risk of not completing courses
+- **Performance Forecasting:** Predicts final grades based on early performance
+- **Engagement Monitoring:** Tracks learner activity patterns
+- **Intervention Recommendations:** Suggests timely interventions for struggling learners
+- **Cohort Analysis:** Compares learner performance across cohorts
+- **Success Factor Identification:** AI identifies factors contributing to success
+
+**Data Model:**
+```
+LearnerAnalytics
+  id, learner_id, course_id, engagement_score,
+  predicted_completion_probability, predicted_grade,
+  risk_level (LOW/MEDIUM/HIGH), risk_factors[],
+  recommended_interventions[], last_updated
+
+InterventionLog
+  id, learner_id, intervention_type, triggered_by,
+  intervention_date, action_taken, outcome,
+  effectiveness_rating
+```
+
+---
+
+### 10.4 Core LMS Features
+
+#### 10.4.1 Course Management
+
+**Features:**
+- **Course Builder:** Drag-and-drop course creation interface
+- **Content Types:** Videos, PDFs, SCORM packages, H5P interactive content, live sessions
+- **Course Templates:** Pre-built templates for common training programs
+- **Version Control:** Track course revisions and updates
+- **Content Library:** Reusable learning objects across courses
+- **Prerequisite Management:** Define course dependencies
+- **Certification Paths:** Multi-course learning pathways
+
+**Data Model:**
+```
+Course
+  id, title, description, category, level (BEGINNER/INTERMEDIATE/ADVANCED),
+  instructor_ids[], duration_hours, credits, language,
+  prerequisites[], learning_outcomes[], status,
+  enrollment_type (OPEN/RESTRICTED/INVITATION), max_enrollments,
+  start_date, end_date, certification_awarded
+
+CourseModule
+  id, course_id, module_number, title, description,
+  content_items[], assessments[], order, estimated_hours
+
+ContentItem
+  id, module_id, content_type, title, content_url,
+  duration_minutes, mandatory, completion_criteria,
+  ai_generated, source_material_id
+
+LearningOutcome
+  id, course_id, outcome_description, competency_mapped,
+  assessment_method, bloom_taxonomy_level
+```
+
+---
+
+#### 10.4.2 Enrollment & Progress Tracking
+
+**Features:**
+- **Self-Enrollment:** Learners browse and enroll in courses
+- **Cohort Enrollment:** Bulk enrollment for training programs
+- **Waitlist Management:** Queue for full courses
+- **Progress Dashboard:** Visual progress indicators
+- **Completion Certificates:** Auto-generated upon course completion
+- **Transcript Generation:** Comprehensive learning record
+- **Competency Badges:** Micro-credentials for specific skills
+
+**Data Model:**
+```
+Enrollment
+  id, learner_id, course_id, enrollment_date,
+  status (ACTIVE/COMPLETED/DROPPED/SUSPENDED),
+  progress_percentage, last_activity_date,
+  completion_date, certificate_id, final_grade
+
+LearnerProgress
+  id, enrollment_id, module_id, content_item_id,
+  started_at, completed_at, time_spent_minutes,
+  attempts, score, status
+
+Certificate
+  id, enrollment_id, certificate_type, issue_date,
+  certificate_number, verification_url, pdf_path,
+  digital_signature, blockchain_hash (for verification)
+
+CompetencyBadge
+  id, learner_id, competency_name, badge_image,
+  earned_date, issuer, verification_url,
+  linked_courses[], evidence_items[]
+```
+
+---
+
+#### 10.4.3 Assessment & Evaluation
+
+**Features:**
+- **Quiz Types:** MCQ, True/False, Short Answer, Essay, Matching, Fill-in-blank
+- **Assignment Submission:** File upload, text entry, external tool integration
+- **Peer Review:** Structured peer assessment workflows
+- **Rubric-Based Grading:** Customizable grading rubrics
+- **Grade Book:** Comprehensive grade management
+- **Feedback Tools:** Text, audio, video feedback
+- **Exam Scheduling:** Timed assessments with scheduling
+
+**Data Model:**
+```
+Assessment
+  id, course_id, module_id, assessment_type,
+  title, instructions, total_points, passing_score,
+  time_limit_minutes, attempts_allowed,
+  randomize_questions, show_correct_answers,
+  ai_grading_enabled, rubric_id
+
+AssessmentSubmission
+  id, assessment_id, learner_id, submission_date,
+  answers[], files_uploaded[], time_taken_minutes,
+  score, ai_score, instructor_score, feedback,
+  status (SUBMITTED/GRADED/RETURNED), grade_date
+
+PeerReview
+  id, submission_id, reviewer_id, review_date,
+  rubric_scores{}, comments, helpful_rating
+```
+
+---
+
+#### 10.4.4 Discussion Forums & Collaboration
+
+**Features:**
+- **Course Forums:** Threaded discussions per course
+- **Q&A Boards:** Stack Overflow-style question boards
+- **Study Groups:** Learner-created collaborative spaces
+- **Live Chat:** Real-time messaging
+- **Video Conferencing:** Integrated Zoom/Teams/Jitsi
+- **Collaborative Documents:** Shared note-taking and writing
+- **Mentorship Matching:** Connect learners with mentors
+
+**Data Model:**
+```
+ForumThread
+  id, course_id, category, title, created_by,
+  created_at, pinned, locked, views_count,
+  replies_count, last_activity_date
+
+ForumPost
+  id, thread_id, parent_post_id, author_id,
+  post_content, posted_at, edited_at,
+  upvotes, helpful_marks, ai_moderated
+
+StudyGroup
+  id, course_id, group_name, created_by,
+  members[], description, private,
+  meeting_schedule, collaboration_tools[]
+```
+
+---
+
+### 10.5 Integration with DACORIS Modules
+
+#### 10.5.1 Research Module Integration
+
+**Contextualized Training:**
+- **Supervision Training:** Auto-enroll supervisors when they're assigned PhD/Masters students
+- **Ethics Training:** Mandatory ethics course before submitting ethics applications
+- **Publication Writing:** Courses linked to publication targets in Performance Contracting
+- **Research Data Management:** Training tied to data capture and repository usage
+
+**Data Flow:**
+```
+Research Module → Training Module
+- student_assigned EVENT → enroll supervisor in "Postgraduate Supervision" course
+- ethics_application_submitted EVENT → check if ethics training completed
+- publication_registered EVENT → update "Scientific Writing" competency badge
+```
+
+---
+
+#### 10.5.2 Grant Module Integration
+
+**Grant-Related Training:**
+- **Proposal Writing Course:** Linked to grant application process
+- **Budget Management Training:** For PIs managing awards
+- **Compliance Training:** Mandatory for grant recipients
+- **Financial Reporting:** Training for post-award management
+
+**Data Flow:**
+```
+Grant Module → Training Module
+- award_issued EVENT → enroll PI in "Grant Management for PIs" course
+- proposal_submitted EVENT → track "Proposal Writing" course completion
+```
+
+---
+
+#### 10.5.3 Performance Contracting Integration
+
+**Staff Development Tracking:**
+- **Training Hours:** Auto-populate from completed courses
+- **Competency Development:** Map course completions to PC indicators
+- **Professional Development Score:** Calculate from training activities
+- **Certification Tracking:** Link certificates to staff performance records
+
+**Data Flow:**
+```
+Training Module → Performance Contracting
+- course_completed EVENT → increment "Training Hours" indicator
+- certificate_earned EVENT → update "Professional Development" score
+- competency_badge_earned EVENT → update staff competency profile
+```
+
+---
+
+### 10.6 AI Infrastructure & Architecture
+
+#### 10.6.1 AI Model Management
+
+**Components:**
+- **Model Registry:** Catalog of AI models with versions and metadata
+- **Model Serving:** API endpoints for AI inference
+- **Model Monitoring:** Track performance, drift, and usage
+- **A/B Testing:** Compare model versions
+- **Fine-Tuning Pipeline:** Customize models on institutional data
+- **Prompt Library:** Reusable prompts for common tasks
+
+**Data Model:**
+```
+AIModel
+  id, model_name, model_type, version, provider,
+  endpoint_url, api_key_ref, parameters{},
+  use_cases[], performance_metrics{},
+  cost_per_request, active, last_updated
+
+AIModelUsage
+  id, model_id, user_id, use_case, request_count,
+  total_tokens, total_cost, avg_latency_ms,
+  error_rate, date
+
+PromptTemplate
+  id, name, description, template_text,
+  variables[], model_id, category,
+  usage_count, effectiveness_rating
+```
+
+---
+
+#### 10.6.2 Ethical AI & Governance
+
+**Features:**
+- **Bias Detection:** Monitor AI outputs for bias
+- **Transparency:** Explain AI decisions to learners
+- **Human Oversight:** Instructor review of AI assessments
+- **Data Privacy:** Learner data protection in AI training
+- **Opt-Out Options:** Learners can disable AI features
+- **Audit Trails:** Log all AI interactions
+
+**Policies:**
+- AI-generated content must be reviewed by instructors
+- AI assessments are preliminary; final grades require human review
+- Learner data used for AI training must be anonymized
+- AI recommendations are suggestions, not mandates
+
+---
+
+### 10.7 Workflows & Flowcharts
+
+#### 10.7.1 AI-Enhanced Course Creation Workflow
+
+```mermaid
+flowchart TD
+    A[Instructor initiates\ncourse creation] --> B[Define course objectives\nand target audience]
+    
+    B --> C[AI Course Assistant activated]
+    
+    C --> D[AI generates:\nCourse outline\nLearning outcomes\nModule structure]
+    
+    D --> E{Instructor\nreviews outline}
+    E -- Revise --> F[Provide feedback\nto AI]
+    F --> D
+    E -- Approve --> G[AI generates module content:\nLessons, readings, examples]
+    
+    G --> H[Instructor reviews\nand edits content]
+    
+    H --> I[AI generates assessments:\nQuizzes, assignments, rubrics]
+    
+    I --> J{Instructor\nreviews assessments}
+    J -- Revise --> K[Adjust difficulty\nor question types]
+    K --> I
+    J -- Approve --> L[AI suggests\nsupplementary resources]
+    
+    L --> M[Instructor adds\nmultimedia content:\nVideos, PDFs, links]
+    
+    M --> N[Configure course settings:\nEnrollment, dates, prerequisites]
+    
+    N --> O[AI quality check:\nCompleteness, alignment,\naccessibility]
+    
+    O --> P{Quality\ncheck passed?}
+    P -- Issues found --> Q[AI highlights gaps\nand suggestions]
+    Q --> H
+    P -- Passed --> R[Publish course\nStatus: ACTIVE]
+    
+    R --> S[AI monitors:\nEnrollment, engagement,\nlearner feedback]
+    
+    S --> T[AI suggests improvements:\nContent updates,\ndifficulty adjustments]
+    
+    style R fill:#2ecc71,color:#fff
+    style D fill:#3498db,color:#fff
+    style G fill:#3498db,color:#fff
+    style I fill:#3498db,color:#fff
+    style L fill:#3498db,color:#fff
+    style O fill:#3498db,color:#fff
+```
+
+---
+
+#### 10.7.2 Personalized Learning Path Generation
+
+```mermaid
+flowchart TD
+    A[Learner enrolls\nin training program] --> B[AI Competency Assessment\ninitiated]
+    
+    B --> C[Learner completes:\nSkills survey\nDiagnostic quiz\nGoals questionnaire]
+    
+    C --> D[AI analyzes:\nCurrent competencies\nKnowledge gaps\nLearning preferences\nCareer goals]
+    
+    D --> E[AI generates\npersonalized learning path]
+    
+    E --> F[Recommended courses:\n1. Foundational\n2. Core\n3. Advanced\n4. Electives]
+    
+    F --> G{Learner\nreviews path}
+    G -- Adjust --> H[Learner modifies:\nPace, topics, order]
+    H --> E
+    G -- Accept --> I[Learning path activated\nFirst course enrolled]
+    
+    I --> J[Learner progresses\nthrough courses]
+    
+    J --> K[AI monitors:\nEngagement, performance,\ntime spent, struggles]
+    
+    K --> L{Performance\nanalysis}
+    L -- On track --> J
+    L -- Struggling --> M[AI intervention:\nRecommend review materials\nSuggest tutoring\nAdjust difficulty]
+    M --> J
+    L -- Excelling --> N[AI suggests:\nSkip ahead\nTake advanced topics\nMentor others]
+    N --> J
+    
+    J --> O{Course\ncompleted?}
+    O -- No --> J
+    O -- Yes --> P[Competency re-assessment]
+    
+    P --> Q[AI measures:\nSkill improvement\nGaps closed\nNew competencies]
+    
+    Q --> R{Learning path\ncomplete?}
+    R -- No --> S[AI recommends\nnext course]
+    S --> I
+    R -- Yes --> T[Certificate awarded\nCompetency badges issued\nTranscript generated]
+    
+    T --> U[AI suggests:\nAdvanced pathways\nSpecializations\nCareer opportunities]
+    
+    style T fill:#2ecc71,color:#fff
+    style D fill:#9b59b6,color:#fff
+    style E fill:#9b59b6,color:#fff
+    style K fill:#9b59b6,color:#fff
+    style M fill:#f39c12,color:#fff
+    style P fill:#9b59b6,color:#fff
+```
+
+---
+
+#### 10.7.3 AI Teaching Assistant Interaction Flow
+
+```mermaid
+flowchart TD
+    A[Learner has question\nwhile studying] --> B[Opens AI Teaching Assistant\nchatbot]
+    
+    B --> C[Learner types question\nor uploads document]
+    
+    C --> D[AI processes query:\nNLP analysis\nIntent classification\nContext extraction]
+    
+    D --> E[AI searches knowledge base:\nCourse materials\nTextbooks\nPrevious Q&As\nExternal resources]
+    
+    E --> F[AI generates response\nusing RAG]
+    
+    F --> G{Response\nconfidence?}
+    G -- High >80% --> H[AI provides answer\nwith sources cited]
+    G -- Medium 50-80% --> I[AI provides answer\nwith disclaimer:\n"I'm not entirely sure..."]
+    G -- Low <50% --> J[AI escalates:\n"Let me connect you\nwith an instructor"]
+    
+    H --> K
+    I --> K
+    J --> L[Instructor notified\nQuestion queued]
+    
+    L --> M[Instructor responds\nvia chat or email]
+    
+    M --> N[AI learns from\ninstructor response]
+    
+    K[Learner receives answer]
+    K --> O{Answer\nhelpful?}
+    O -- Yes --> P[Learner rates:\nThumbsup\n5-star rating]
+    O -- No --> Q[Learner provides feedback:\n"Not what I needed"\n"Incorrect information"]
+    
+    P --> R[AI logs success\nImproves knowledge base]
+    Q --> S[AI flags for review\nInstructor notified]
+    
+    S --> T[Instructor reviews\nand corrects]
+    
+    T --> N
+    
+    R --> U[Conversation continues\nor ends]
+    
+    U --> V{Follow-up\nquestion?}
+    V -- Yes --> C
+    V -- No --> W[Session ends\nConversation saved]
+    
+    W --> X[AI analyzes session:\nCommon questions\nKnowledge gaps\nContent improvements]
+    
+    style H fill:#2ecc71,color:#fff
+    style J fill:#e74c3c,color:#fff
+    style D fill:#3498db,color:#fff
+    style E fill:#3498db,color:#fff
+    style F fill:#3498db,color:#fff
+    style N fill:#9b59b6,color:#fff
+    style X fill:#9b59b6,color:#fff
+```
+
+---
+
+### 10.8 API Endpoints
+
+```
+# Course Management
+POST   /api/training/courses                           # Create course
+GET    /api/training/courses/{id}                      # Get course details
+PUT    /api/training/courses/{id}                      # Update course
+POST   /api/training/courses/{id}/publish              # Publish course
+GET    /api/training/courses/catalog                   # Browse course catalog
+
+# AI Course Generation
+POST   /api/training/ai/generate-outline               # AI generates course outline
+POST   /api/training/ai/generate-content               # AI generates lesson content
+POST   /api/training/ai/generate-assessment            # AI generates quiz/assignment
+POST   /api/training/ai/quality-check                  # AI reviews course quality
+
+# Enrollment & Progress
+POST   /api/training/enrollments                       # Enroll in course
+GET    /api/training/enrollments/{id}/progress         # Get progress
+POST   /api/training/enrollments/{id}/complete         # Mark course complete
+GET    /api/training/learners/{id}/transcript          # Get learning transcript
+
+# Personalized Learning
+POST   /api/training/ai/assess-competencies            # AI competency assessment
+POST   /api/training/ai/generate-learning-path         # Generate personalized path
+GET    /api/training/ai/recommendations                # Get course recommendations
+POST   /api/training/ai/adjust-path                    # Adjust learning path
+
+# AI Teaching Assistant
+POST   /api/training/ai/chatbot/ask                    # Ask question to AI assistant
+GET    /api/training/ai/chatbot/conversation/{id}      # Get conversation history
+POST   /api/training/ai/chatbot/feedback               # Provide feedback on answer
+POST   /api/training/ai/chatbot/escalate               # Escalate to instructor
+
+# Assessment & Grading
+POST   /api/training/assessments/{id}/submit           # Submit assessment
+POST   /api/training/ai/grade-submission               # AI grades submission
+GET    /api/training/assessments/{id}/feedback         # Get feedback
+POST   /api/training/assessments/{id}/peer-review      # Submit peer review
+
+# AI Writing Assistant
+POST   /api/training/ai/writing/analyze                # Analyze writing
+POST   /api/training/ai/writing/suggest                # Get writing suggestions
+POST   /api/training/ai/writing/paraphrase             # Paraphrase text
+POST   /api/training/ai/writing/citations              # Generate citations
+
+# Analytics & Reporting
+GET    /api/training/analytics/learner/{id}            # Learner analytics
+GET    /api/training/analytics/course/{id}             # Course analytics
+GET    /api/training/ai/predict-performance            # Predict learner performance
+GET    /api/training/ai/at-risk-learners               # Identify at-risk learners
+
+# Certificates & Badges
+POST   /api/training/certificates/issue                # Issue certificate
+GET    /api/training/certificates/{id}/verify          # Verify certificate
+POST   /api/training/badges/award                      # Award competency badge
+GET    /api/training/learners/{id}/badges              # Get learner badges
+
+# Integration Endpoints
+POST   /api/training/integrations/research/enroll      # Auto-enroll from research events
+POST   /api/training/integrations/grants/enroll        # Auto-enroll from grant events
+POST   /api/training/integrations/pc/update            # Update PC indicators
+GET    /api/training/integrations/competencies         # Get competency mappings
+```
+
+---
+
+### 10.9 Implementation Phases
+
+#### Phase T1: Core LMS Foundation (Weeks 1-6)
+- [ ] Database schema for courses, enrollments, assessments
+- [ ] Course builder interface
+- [ ] Content management system
+- [ ] Enrollment and progress tracking
+- [ ] Basic assessment tools (quizzes, assignments)
+- [ ] Grade book and reporting
+
+#### Phase T2: AI Content Generation (Weeks 7-10)
+- [ ] AI model integration (GPT-4/Claude API)
+- [ ] Course outline generation
+- [ ] Lesson content generation
+- [ ] Quiz and assessment generation
+- [ ] Quality checking algorithms
+- [ ] Instructor review workflow
+
+#### Phase T3: Personalized Learning (Weeks 11-14)
+- [ ] Competency assessment system
+- [ ] Learning path generation algorithm
+- [ ] Recommendation engine
+- [ ] Adaptive difficulty system
+- [ ] Performance prediction models
+- [ ] Intervention alert system
+
+#### Phase T4: AI Teaching Assistant (Weeks 15-18)
+- [ ] Chatbot interface
+- [ ] RAG implementation with course knowledge base
+- [ ] NLP query processing
+- [ ] Response generation and citation
+- [ ] Escalation workflow
+- [ ] Feedback and learning loop
+
+#### Phase T5: AI Assessment & Writing Tools (Weeks 19-22)
+- [ ] Automated essay grading
+- [ ] Code assessment system
+- [ ] Plagiarism detection
+- [ ] Writing analysis and suggestions
+- [ ] Citation generator
+- [ ] Peer review matching
+
+#### Phase T6: Integration & Analytics (Weeks 23-26)
+- [ ] Research Module integration
+- [ ] Grant Module integration
+- [ ] Performance Contracting integration
+- [ ] Learner analytics dashboard
+- [ ] Course analytics dashboard
+- [ ] Predictive analytics models
+- [ ] Certificate and badge system
+
+---
+
+### 10.10 Frontend Implementation
+
+- [ ] Course catalog and search interface
+- [ ] Course player (video, documents, interactive content)
+- [ ] AI-powered course builder for instructors
+- [ ] Learner dashboard with personalized recommendations
+- [ ] AI chatbot widget (always accessible)
+- [ ] Assessment and quiz interfaces
+- [ ] AI writing assistant panel
+- [ ] Discussion forums and collaboration tools
+- [ ] Progress tracking and competency visualization
+- [ ] Certificate and badge showcase
+- [ ] Instructor analytics dashboard
+- [ ] Admin course management console
+- [ ] Mobile-responsive learning experience
+- [ ] Offline content access (PWA)
+
+---
+
+### 10.11 AI Model Costs & Budget Considerations
+
+**Estimated AI Usage Costs:**
+
+| AI Feature | Model | Cost per Request | Monthly Volume | Monthly Cost |
+|---|---|---|---|---|
+| Course content generation | GPT-4 | $0.03 | 1,000 | $30 |
+| Chatbot responses | GPT-3.5 Turbo | $0.002 | 50,000 | $100 |
+| Essay grading | Claude | $0.015 | 5,000 | $75 |
+| Writing suggestions | GPT-4 | $0.03 | 10,000 | $300 |
+| Recommendations | Custom ML | $0.001 | 100,000 | $100 |
+| **Total** | | | | **$605/month** |
+
+**Cost Optimization Strategies:**
+- Cache common AI responses
+- Use smaller models for simple tasks
+- Batch processing for non-urgent requests
+- Self-hosted open-source models for privacy-sensitive tasks
+- Rate limiting to prevent abuse
+
+---
+
+## 11. Cross-Cutting Platform Services
 
 ### 9.1 Workflow & Rules Engine
 
@@ -2488,43 +4359,111 @@ flowchart TD
 
 ---
 
-#### 16.3.2 Review, Scoring & Award Decision
+#### 16.3.2 Multi-Level Review, Scoring & Award Decision
 
 ```mermaid
 flowchart TD
-    A[Proposal Status: SUBMITTED] --> B[GRANT_OFFICER assigns\nExternal Reviewers]
-    B --> C[ReviewAssignment created\nper reviewer]
-    C --> D{Reviewer declares\nCOI?}
-    D -- Yes --> E[COIDeclaration recorded\nReviewer excluded\nNew reviewer assigned]
-    E --> C
-    D -- No --> F[Review begins\nStatus: IN_PROGRESS]
-
-    F --> G[Reviewer scores rubric\ncriteria + narrative]
-    G --> H{All assigned\nreviewers submitted?}
-    H -- No --> G
-    H -- Yes --> I[Stage closes\nScores unblinded]
-    I --> J[Panel / Manager\nreviews aggregated scores]
-    J --> K{Decision}
-    K -- Decline --> L[Decision: DECLINED\nDecline notice sent\nProposal archived]
-    K -- Revise & Resubmit --> M[Proposal returned\nwith panel feedback]
-    M --> A
-    K -- Approve --> N[Decision: APPROVED\nAward process begins]
-    N --> O[Award letter / contract\npackage generated]
-    O --> P[Award Status: ACTIVE\naward_issued EVENT emitted]
-
-    style P fill:#2ecc71,color:#fff
-    style L fill:#e74c3c,color:#fff
-    style I fill:#3498db,color:#fff
+    A[Proposal Status: SUBMITTED\nStep Indicator: Received] --> B[Auto-advance to Step 1/5]
+    
+    %% ── LEVEL 1: ELIGIBILITY REVIEW ──
+    B --> C1[Step 1/5: ELIGIBILITY REVIEW\nGrant Office Staff assigned]
+    C1 --> C2{Documents complete?\nEligibility verified?\nBudget in range?}
+    C2 -- Fail --> C3[Return for Corrections\nStays at Step 1/5]
+    C3 --> A
+    C2 -- Ineligible --> C4[REJECT: Ineligible\nTerminal state]
+    C2 -- Pass --> D1[Advance to Step 2/5\nSLA: 3-5 days met]
+    
+    %% ── LEVEL 2: TECHNICAL REVIEW ──
+    D1 --> E1[Step 2/5: TECHNICAL REVIEW\n2-3 SMEs assigned]
+    E1 --> E2{Reviewers declare COI?}
+    E2 -- Yes --> E3[COI recorded\nReviewer excluded\nNew reviewer assigned]
+    E3 --> E1
+    E2 -- No --> E4[Review begins\nBlinded scoring]
+    E4 --> E5[Reviewers score 5 criteria:\nInnovation 25%\nMethodology 25%\nImpact 20%\nBudget 15%\nTeam 15%]
+    E5 --> E6{All reviewers\nsubmitted?}
+    E6 -- No --> E5
+    E6 -- Yes --> E7[Scores unblinded\nWeighted average calculated]
+    E7 --> E8{Average score\n≥ 70/100?}
+    E8 -- Low score --> E9[REJECT: Low Score\nTerminal state]
+    E8 -- Conditional --> E10[Revisions required\nRe-review at Step 2/5]
+    E10 --> E4
+    E8 -- Pass --> F1[Advance to Step 3/5\nSLA: 14-21 days met]
+    
+    %% ── LEVEL 3: BUDGET REVIEW ──
+    F1 --> G1[Step 3/5: BUDGET REVIEW\nFinance Officer + Analyst]
+    G1 --> G2{Budget validated?\nCosts allowable?\nCost-sharing OK?}
+    G2 -- Budget issues --> G3[REJECT: Budget Issues\nTerminal state]
+    G2 -- Revisions needed --> G4[Request Budget Revision\nRe-review at Step 3/5]
+    G4 --> G1
+    G2 -- Approved --> H1[Advance to Step 4/5\nSLA: 7-10 days met]
+    
+    %% ── LEVEL 4: PANEL REVIEW ──
+    H1 --> I1[Step 4/5: PANEL REVIEW\n5-7 Panel Members]
+    I1 --> I2[Panel meeting scheduled\nAll Level 2 & 3 scores reviewed]
+    I2 --> I3{Quorum met?\n≥60% attendance}
+    I3 -- No --> I4[Meeting rescheduled]
+    I4 --> I1
+    I3 -- Yes --> I5[Comparative discussion\nStrategic alignment assessed\nProposals ranked]
+    I5 --> I6{Panel decision}
+    I6 -- Do not fund --> I7[REJECT: Not Recommended\nTerminal state]
+    I6 -- Waitlist --> I8[WAITLIST: Hold state\nMay advance if funds available]
+    I6 -- Recommend --> J1[Advance to Step 5/5\nSLA: Panel + 5 days met]
+    
+    %% ── LEVEL 5: FINAL APPROVAL ──
+    J1 --> K1[Step 5/5: FINAL APPROVAL\nGrant Officer + Institutional Lead + Legal]
+    K1 --> K2{Due diligence checks:\nCapacity OK?\nCompliance OK?\nRisk assessed?}
+    K2 -- Defer --> K3[DEFER: Pending info\nHold state]
+    K2 -- Reject --> K4[REJECT: Final decision\nTerminal state]
+    K2 -- Approve --> K5{Award conditions\nrequired?}
+    K5 -- Yes --> K6[Award with Conditions\nConditions documented]
+    K5 -- No --> K7[Award Approved\nNo special conditions]
+    K6 --> L1
+    K7 --> L1
+    
+    %% ── AWARD ISSUANCE ──
+    L1[Award letter generated\nContract package prepared]
+    L1 --> L2[ResearchProject auto-created\nLinked to award_id]
+    L2 --> L3[Award Status: ACTIVE\nStep Indicator: AWARDED\naward_issued EVENT emitted]
+    
+    %% ── NOTIFICATIONS ──
+    L3 --> M1[Success notification sent]
+    C4 --> M2[Rejection with feedback]
+    E9 --> M2
+    G3 --> M2
+    I7 --> M2
+    K4 --> M2
+    
+    %% ── STYLING ──
+    style C1 fill:#f39c12,color:#fff
+    style E1 fill:#9b59b6,color:#fff
+    style G1 fill:#3498db,color:#fff
+    style I1 fill:#1abc9c,color:#fff
+    style K1 fill:#16a085,color:#fff
+    style L3 fill:#2ecc71,color:#fff
+    style C4 fill:#e74c3c,color:#fff
+    style E9 fill:#e74c3c,color:#fff
+    style G3 fill:#e74c3c,color:#fff
+    style I7 fill:#e74c3c,color:#fff
+    style K4 fill:#e74c3c,color:#fff
+    style I8 fill:#f39c12,color:#fff
+    style K3 fill:#f39c12,color:#fff
 ```
 
-**Gate conditions before stage advance:**
+**Multi-Level Gate Conditions:**
 
-| Gate | Condition Required |
-|---|---|
-| Review stage opens | Minimum 2 reviewers assigned, all COI declarations submitted |
-| Scores unblinded | All assigned reviewers have submitted (or deadline passed) |
-| Panel review | Quorum met (configurable minimum % of reviewers) |
-| Award issued | Grant Officer AND Institution Admin approval (if amount > threshold) |
+| Review Level | Step | Gate Condition | SLA |
+|---|---|---|---|
+| **Level 1: Eligibility** | Step 1/5 | All required documents submitted, applicant eligible, budget in range, institutional endorsement | 3-5 days |
+| **Level 2: Technical** | Step 2/5 | Minimum 2 reviewers assigned, all COI declarations submitted, all reviews submitted, average score ≥ 70/100 | 14-21 days |
+| **Level 3: Budget** | Step 3/5 | Budget review completed, all budget lines validated, cost-sharing verified, no unallowable costs | 7-10 days |
+| **Level 4: Panel** | Step 4/5 | Panel meeting conducted, quorum met (≥60%), all proposals ranked, funding recommendations recorded | Panel + 5 days |
+| **Level 5: Final** | Step 5/5 | Institutional capacity verified, compliance checks passed, risk assessment completed, legal review (if required) | 5-7 days |
+| **Award Issuance** | Complete | Grant Officer approval, Institutional Admin approval (if amount > threshold), award conditions defined | Immediate |
+
+**Step Indicator Visibility:**
+- Applicants see: "Step X/5: [Stage Name]" in their portal
+- Staff see: Full workflow status with reviewer assignments and pending actions
+- Audit trail: Complete history of stage transitions with timestamps and decision-makers
 
 ---
 

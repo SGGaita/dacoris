@@ -189,18 +189,30 @@ class OrcidSyncService:
             return None
         
         domain = email.split("@")[1].lower()
+        print(f"[DEBUG] Verifying email domain: {domain}")
         
         result = await db.execute(select(Institution))
         institutions = result.scalars().all()
         
+        print(f"[DEBUG] Found {len(institutions)} institutions in database")
+        
         for institution in institutions:
-            if institution.domain.lower() == domain:
+            print(f"[DEBUG] Checking institution: {institution.name}")
+            print(f"[DEBUG]   - Primary domain: {institution.domain}")
+            print(f"[DEBUG]   - Verified domains: {institution.verified_domains}")
+            
+            # Check primary domain if it exists
+            if institution.domain and institution.domain.strip() and institution.domain.lower() == domain:
+                print(f"[DEBUG] ✓ Match found on primary domain!")
                 return institution
             
             # Check verified_domains (comma-separated list)
-            if institution.verified_domains:
-                verified = [d.strip().lower() for d in institution.verified_domains.split(",")]
+            if institution.verified_domains and institution.verified_domains.strip():
+                verified = [d.strip().lower() for d in institution.verified_domains.split(",") if d.strip()]
+                print(f"[DEBUG]   - Parsed verified domains: {verified}")
                 if domain in verified:
+                    print(f"[DEBUG] ✓ Match found in verified domains!")
                     return institution
         
+        print(f"[DEBUG] ✗ No match found for domain: {domain}")
         return None

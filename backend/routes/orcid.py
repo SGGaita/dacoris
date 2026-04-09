@@ -16,8 +16,9 @@ router = APIRouter(prefix="/api/auth/orcid", tags=["orcid"])
 ORCID_CLIENT_ID = os.getenv("ORCID_CLIENT_ID")
 ORCID_CLIENT_SECRET = os.getenv("ORCID_CLIENT_SECRET")
 ORCID_REDIRECT_URI = os.getenv("ORCID_REDIRECT_URI", "http://localhost:8000/api/auth/orcid/callback")
-ORCID_AUTHORIZE_URL = "https://orcid.org/oauth/authorize"
-ORCID_TOKEN_URL = "https://orcid.org/oauth/token"
+ORCID_SANDBOX_MODE = os.getenv("ORCID_SANDBOX_MODE", "false").lower() == "true"
+ORCID_AUTHORIZE_URL = "https://sandbox.orcid.org/oauth/authorize" if ORCID_SANDBOX_MODE else "https://orcid.org/oauth/authorize"
+ORCID_TOKEN_URL = "https://sandbox.orcid.org/oauth/token" if ORCID_SANDBOX_MODE else "https://orcid.org/oauth/token"
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 @router.get("/login")
@@ -39,6 +40,7 @@ async def orcid_login():
 @router.get("/callback")
 async def orcid_callback(
     code: str = Query(...),
+    state: str = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
     """Handle ORCID OAuth callback"""
@@ -69,6 +71,85 @@ async def orcid_callback(
         expires_in = token_data.get("expires_in", 631138518)  # ORCID tokens are long-lived
         name = token_data.get("name")
         
+        # Check if this is a registration flow (state parameter or check session)
+        is_registration = state == "registration"
+        
+        # If registration flow, fetch full ORCID profile and redirect with data
+        if is_registration:
+            first_name = ""
+            given_name = ""
+            affiliation = ""
+            
+            # Fetch full ORCID profile to get detailed name and affiliation
+            try:
+                # Determine ORCID API base URL from environment
+                orcid_api_base = os.getenv("ORCID_API_BASE_URL", "https://pub.orcid.org")
+                
+                profile_response = await client.get(
+                    f"{orcid_api_base}/v3.0/{orcid_id}/person",
+                    headers={
+                        "Accept": "application/json",
+                        "Authorization": f"Bearer {access_token}"
+                    }
+                )
+                
+                if profile_response.status_code == 200:
+                    profile_data = profile_response.json()
+                    
+                    # Extract first name and given name (family name)
+                    name_obj = profile_data.get("name", {})
+                    if name_obj:
+                        first_name = name_obj.get("given-names", {}).get("value", "")
+                        given_name = name_obj.get("family-name", {}).get("value", "")
+                    
+                    # Extract primary affiliation from employments
+                    employments = profile_data.get("employments", {}).get("affiliation-group", [])
+                    if employments and len(employments) > 0:
+                        # Get the most recent employment
+                        employment_group = employments[0]
+                        summaries = employment_group.get("summaries", [])
+                        if summaries and len(summaries) > 0:
+                            employment = summaries[0].get("employment-summary", {})
+                            org_name = employment.get("organization", {}).get("name", "")
+                            if org_name:
+                                affiliation = org_name
+                    
+                    # If no employment, try education
+                    if not affiliation:
+                        educations = profile_data.get("educations", {}).get("affiliation-group", [])
+                        if educations and len(educations) > 0:
+                            education_group = educations[0]
+                            summaries = education_group.get("summaries", [])
+                            if summaries and len(summaries) > 0:
+                                education = summaries[0].get("education-summary", {})
+                                org_name = education.get("organization", {}).get("name", "")
+                                if org_name:
+                                    affiliation = org_name
+                else:
+                    # Fallback to parsing name from token response
+                    name_parts = (name or "").split(" ", 1)
+                    first_name = name_parts[0] if name_parts else ""
+                    given_name = name_parts[1] if len(name_parts) > 1 else ""
+            except Exception as e:
+                print(f"Error fetching ORCID profile: {e}")
+                # Fallback to parsing name from token response
+                name_parts = (name or "").split(" ", 1)
+                first_name = name_parts[0] if name_parts else ""
+                given_name = name_parts[1] if len(name_parts) > 1 else ""
+            
+            # URL encode the parameters
+            from urllib.parse import quote
+            redirect_url = (
+                f"{FRONTEND_URL}/register?"
+                f"orcid_id={quote(orcid_id)}&"
+                f"first_name={quote(first_name)}&"
+                f"given_name={quote(given_name)}&"
+                f"affiliation={quote(affiliation)}&"
+                f"orcid_token={quote(access_token)}"
+            )
+            return RedirectResponse(url=redirect_url)
+        
+        # Otherwise, handle as login flow
         # Check if user exists
         result = await db.execute(select(User).where(User.orcid_id == orcid_id))
         user = result.scalar_one_or_none()

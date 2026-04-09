@@ -7,49 +7,23 @@ import {
   Box,
   Container,
   Typography,
-  TextField,
   Button,
   Paper,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Grid,
-  Divider,
   Alert,
   CircularProgress,
-  IconButton,
-  Chip,
+  Stepper,
+  Step,
+  StepLabel,
   Link as MuiLink
 } from '@mui/material';
-import { Science, Business, AttachMoney, Search, ArrowForward, School, LocalHospital, Public, AccountBalance } from '@mui/icons-material';
+import { ArrowForward, ArrowBack, School, LocalHospital, Public, AccountBalance } from '@mui/icons-material';
 import { useTheme as useMuiTheme } from '@mui/material/styles';
-import { COLORS } from '@/contexts/ThemeContext';
+import TierSelector from '@/components/registration/TierSelector';
+import ResearcherMethodSelector from '@/components/registration/ResearcherMethodSelector';
+import AdminStaffRegistration from '@/components/registration/AdminStaffRegistration';
+import ResearcherRegistration from '@/components/registration/ResearcherRegistration';
+import RegistrationSuccess from '@/components/registration/RegistrationSuccess';
 
-const ROLES = [
-  'Researcher',
-  'Grant Officer',
-  'Finance Officer',
-  'Research Administrator',
-  'Data Steward',
-  'IT/System Admin',
-];
-
-const INSTITUTIONS = [
-  'University of Nairobi', 'Kenyatta University', 'KEMRI', 'Strathmore University',
-  'Moi University', 'Egerton University', 'Maseno University', 'Other',
-];
-
-function passwordStrength(pw) {
-  let score = 0;
-  if (pw.length >= 8) score++;
-  if (/[A-Z]/.test(pw)) score++;
-  if (/[0-9]/.test(pw)) score++;
-  if (/[^A-Za-z0-9]/.test(pw)) score++;
-  return score;
-}
-
-const PW_COLORS = ['#ef4444', '#f59e0b', '#14b8a6', '#34d399'];
 
 // Network Canvas Component
 function NetworkCanvas() {
@@ -135,54 +109,228 @@ function NetworkCanvas() {
   );
 }
 
-export default function SignupPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const theme = useMuiTheme();
-  const [role, setRole] = useState('researcher');
-  const [form, setForm] = useState({
-    fullName: '',
+  const [activeStep, setActiveStep] = useState(0);
+  const [tier, setTier] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    first_name: '',
+    given_name: '',
+    affiliation: '',
     email: '',
-    organization: '',
-    role: '',
+    institution: '',
+    department: '',
+    job_title: '',
+    phone: '',
     password: '',
-    confirmPassword: '',
+    confirm_password: '',
+    orcid_id: null,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const pwScore = passwordStrength(form.password);
+  const [errors, setErrors] = useState({});
+  const [registrationComplete, setRegistrationComplete] = useState(false);
 
-  const handleChange = (field) => (e) => {
-    setForm(f => ({ ...f, [field]: e.target.value }));
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const orcidId = urlParams.get('orcid_id');
+    const firstName = urlParams.get('first_name');
+    const givenName = urlParams.get('given_name');
+    const affiliation = urlParams.get('affiliation');
+    const orcidToken = urlParams.get('orcid_token');
+    const isOrcidFlow = sessionStorage.getItem('orcid_registration_flow');
+
+    // Check if we have ORCID callback data
+    if (orcidId && isOrcidFlow) {
+      // Set tier to researcher and populate ORCID data
+      setTier('researcher');
+      setFormData(prev => ({
+        ...prev,
+        orcid_id: orcidId,
+        first_name: firstName || '',
+        given_name: givenName || '',
+        affiliation: affiliation || '',
+      }));
+      
+      // Move to step 1 (ORCID Details) - user can review/edit the data
+      setActiveStep(1);
+      
+      // Clean up session storage and URL
+      sessionStorage.removeItem('orcid_registration_flow');
+      window.history.replaceState({}, '', '/register');
+    }
+  }, []);
+
+  const getSteps = () => {
+    if (tier === 'admin_staff') {
+      return ['Select Type', 'Account Details'];
+    } else if (tier === 'researcher') {
+      return ['Select Type', 'ORCID Details', 'Institution Email', 'Password'];
+    }
+    return ['Select Type'];
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (pwScore < 2) {
-      setError('Please choose a stronger password.');
+  const validateStep = () => {
+    const newErrors = {};
+
+    // Step 0: Tier selection
+    if (activeStep === 0 && !tier) {
+      newErrors.tier = 'Please select an account type';
+    }
+
+    // Step 1: ORCID Details (researcher only)
+    if (tier === 'researcher' && activeStep === 1) {
+      if (!formData.first_name?.trim()) {
+        newErrors.first_name = 'First name is required';
+      }
+      if (!formData.given_name?.trim()) {
+        newErrors.given_name = 'Given name is required';
+      }
+    }
+
+    // Step 2: Institution Email (researcher only)
+    if (tier === 'researcher' && activeStep === 2) {
+      if (!formData.email?.trim()) {
+        newErrors.email = 'Email is required';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = 'Invalid email format';
+      }
+      if (!formData.institution) {
+        newErrors.institution = 'Institution is required';
+      }
+    }
+
+    // Step 3: Password (researcher only) or Step 1: Account Details (admin_staff)
+    const isPasswordStep = (tier === 'researcher' && activeStep === 3) || 
+                           (tier === 'admin_staff' && activeStep === 1);
+
+    if (isPasswordStep) {
+      if (tier === 'admin_staff') {
+        if (!formData.name?.trim()) {
+          newErrors.name = 'Name is required';
+        }
+        if (!formData.email?.trim()) {
+          newErrors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+          newErrors.email = 'Invalid email format';
+        }
+      }
+      
+      if (!formData.password) {
+        newErrors.password = 'Password is required';
+      } else if (formData.password.length < 8) {
+        newErrors.password = 'Password must be at least 8 characters';
+      }
+      if (formData.password !== formData.confirm_password) {
+        newErrors.confirm_password = 'Passwords do not match';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = async () => {
+    if (!validateStep()) {
       return;
     }
+
+    const isLastStep = (tier === 'admin_staff' && activeStep === 1) || 
+                       (tier === 'researcher' && activeStep === 3);
+
+    if (isLastStep) {
+      await handleSubmit();
+    } else {
+      setActiveStep(prev => prev + 1);
+    }
+  };
+
+  const handleBack = () => {
+    setActiveStep(prev => prev - 1);
+  };
+
+  const handleSubmit = async () => {
     setLoading(true);
+    setError('');
+
     try {
-      const res = await fetch('/api/auth/signup', {
+      const endpoint = tier === 'admin_staff' 
+        ? '/registration/admin-staff'
+        : '/registration/researcher/orcid';
+
+      const payload = {
+        email: formData.email,
+        password: formData.password,
+        confirm_password: formData.confirm_password,
+        department: formData.department || null,
+        phone: formData.phone || null,
+        ...(tier === 'admin_staff' && { 
+          name: formData.name,
+          job_title: formData.job_title || null,
+        }),
+        ...(tier === 'researcher' && { 
+          first_name: formData.first_name,
+          given_name: formData.given_name,
+          affiliation: formData.affiliation || null,
+          institution: formData.institution,
+          orcid_id: formData.orcid_id,
+        }),
+      };
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api'}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, role }),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.message || 'Signup failed');
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setRegistrationComplete(true);
+      } else {
+        setError(data.detail || data.message || 'Registration failed. Please try again.');
       }
-      router.push('/dashboard');
     } catch (err) {
-      setError(err.message);
+      setError('An error occurred during registration. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const renderStepContent = () => {
+    if (activeStep === 0) {
+      return <TierSelector selectedTier={tier} onSelect={setTier} />;
+    }
+
+    if (tier === 'admin_staff' && activeStep === 1) {
+      return <AdminStaffRegistration formData={formData} onChange={setFormData} errors={errors} />;
+    }
+
+    if (tier === 'researcher' && activeStep === 1) {
+      return <ResearcherRegistration formData={formData} onChange={setFormData} errors={errors} method="orcid" step={1} />;
+    }
+
+    if (tier === 'researcher' && activeStep === 2) {
+      return <ResearcherRegistration formData={formData} onChange={setFormData} errors={errors} method="orcid" step={2} />;
+    }
+
+    if (tier === 'researcher' && activeStep === 3) {
+      return <ResearcherRegistration formData={formData} onChange={setFormData} errors={errors} method="orcid" step={3} />;
+    }
+
+    return null;
+  };
+
+  if (registrationComplete) {
+    return <RegistrationSuccess tier={tier} />;
+  }
+
+  const steps = getSteps();
+
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: 'background.default', fontFamily: 'sans-serif', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default', fontFamily: 'sans-serif', overflow: 'hidden' }}>
       
       {/* Left Panel */}
       <Box
@@ -216,51 +364,51 @@ export default function SignupPage() {
           </Typography>
 
           {/* Who It's For */}
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: 'text.primary' }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2.5, color: 'text.primary', fontSize: '1.125rem' }}>
             Who It's For:
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mb: 4 }}>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-              <School sx={{ fontSize: 28, color: 'primary.main', mt: 0.5 }} />
+              <School sx={{ fontSize: 24, color: 'primary.main', mt: 0.25, flexShrink: 0 }} />
               <Box>
-                <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
+                <Typography sx={{ fontSize: '0.9375rem', fontWeight: 600, color: 'text.primary', mb: 0.25, lineHeight: 1.4 }}>
                   Universities & Research Institutes
                 </Typography>
-                <Typography sx={{ fontSize: '0.875rem', color: 'text.secondary', lineHeight: 1.6 }}>
-                  Full CRIS capabilities with ethics workflows and output tracking
+                <Typography sx={{ fontSize: '0.8125rem', color: 'text.secondary', lineHeight: 1.5 }}>
+                  CRIS with ethics workflows and output tracking
                 </Typography>
               </Box>
             </Box>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-              <LocalHospital sx={{ fontSize: 28, color: 'primary.main', mt: 0.5 }} />
+              <LocalHospital sx={{ fontSize: 24, color: 'primary.main', mt: 0.25, flexShrink: 0 }} />
               <Box>
-                <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
+                <Typography sx={{ fontSize: '0.9375rem', fontWeight: 600, color: 'text.primary', mb: 0.25, lineHeight: 1.4 }}>
                   Hospitals & Clinical Organizations
                 </Typography>
-                <Typography sx={{ fontSize: '0.875rem', color: 'text.secondary', lineHeight: 1.6 }}>
-                  IRB/ethics management with HIPAA-aligned data controls
+                <Typography sx={{ fontSize: '0.8125rem', color: 'text.secondary', lineHeight: 1.5 }}>
+                  IRB/ethics with HIPAA-aligned controls
                 </Typography>
               </Box>
             </Box>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-              <Public sx={{ fontSize: 28, color: 'primary.main', mt: 0.5 }} />
+              <Public sx={{ fontSize: 24, color: 'primary.main', mt: 0.25, flexShrink: 0 }} />
               <Box>
-                <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
+                <Typography sx={{ fontSize: '0.9375rem', fontWeight: 600, color: 'text.primary', mb: 0.25, lineHeight: 1.4 }}>
                   NGOs & Development Organizations
                 </Typography>
-                <Typography sx={{ fontSize: '0.875rem', color: 'text.secondary', lineHeight: 1.6 }}>
-                  Grant lifecycle management from proposal to closeout
+                <Typography sx={{ fontSize: '0.8125rem', color: 'text.secondary', lineHeight: 1.5 }}>
+                  Grant management from proposal to closeout
                 </Typography>
               </Box>
             </Box>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-              <AccountBalance sx={{ fontSize: 28, color: 'primary.main', mt: 0.5 }} />
+              <AccountBalance sx={{ fontSize: 24, color: 'primary.main', mt: 0.25, flexShrink: 0 }} />
               <Box>
-                <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
+                <Typography sx={{ fontSize: '0.9375rem', fontWeight: 600, color: 'text.primary', mb: 0.25, lineHeight: 1.4 }}>
                   Government & Statistics Bureaus
                 </Typography>
-                <Typography sx={{ fontSize: '0.875rem', color: 'text.secondary', lineHeight: 1.6 }}>
-                  Enterprise data integration, pipelines & analytics
+                <Typography sx={{ fontSize: '0.8125rem', color: 'text.secondary', lineHeight: 1.5 }}>
+                  Data integration, pipelines & analytics
                 </Typography>
               </Box>
             </Box>
@@ -273,19 +421,19 @@ export default function SignupPage() {
         </Box>
       </Box>
 
-      {/* Right Panel - Form */}
+      {/* Right Panel - Multi-Step Form */}
       <Box
         sx={{
           flex: 1,
           overflowY: 'auto',
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'center',
           py: 3,
           px: 2,
         }}
       >
-        <Box sx={{ width: '100%', maxWidth: 450 }}>
+        <Box sx={{ width: '100%', maxWidth: 800 }}>
 
           {/* Mobile logo */}
           <Box sx={{ display: { xs: 'flex', lg: 'none' }, alignItems: 'center', gap: 1, mb: 3 }}>
@@ -297,174 +445,74 @@ export default function SignupPage() {
             </Typography>
           </Box>
 
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, mb: 4 }}>
             Create Your Account
           </Typography>
-          <Typography sx={{ fontSize: '0.875rem', color: 'text.secondary', mb: 4 }}>
-            Set up your organization's DACORIS workspace
-          </Typography>
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-
-            {/* Full Name */}
-            <Box>
-              <Typography variant="overline" sx={{ mb: 1, display: 'block', color: 'text.secondary' }}>
-                Full Name
-              </Typography>
-              <TextField
-                fullWidth
-                placeholder="Dr. Amina Wanjiku"
-                required
-                value={form.fullName}
-                onChange={handleChange('fullName')}
-              />
-            </Box>
-
-            {/* Email */}
-            <Box>
-              <Typography variant="overline" sx={{ mb: 1, display: 'block', color: 'text.secondary' }}>
-                Institutional Email
-              </Typography>
-              <TextField
-                fullWidth
-                type="email"
-                placeholder="a.wanjiku@university.ac.ke"
-                required
-                value={form.email}
-                onChange={handleChange('email')}
-              />
-            </Box>
-
-            {/* Organization Name */}
-            <Box>
-              <Typography variant="overline" sx={{ mb: 1, display: 'block', color: 'text.secondary' }}>
-                Organization Name
-              </Typography>
-              <TextField
-                fullWidth
-                placeholder="University of Nairobi"
-                required
-                value={form.organization}
-                onChange={handleChange('organization')}
-              />
-            </Box>
-
-            {/* Role */}
-            <Box>
-              <Typography variant="overline" sx={{ mb: 1, display: 'block', color: 'text.secondary' }}>
-                Role
-              </Typography>
-              <FormControl fullWidth required>
-                <Select
-                  value={form.role}
-                  onChange={handleChange('role')}
-                  displayEmpty
-                >
-                  <MenuItem value="" disabled>
-                    Select your primary role
-                  </MenuItem>
-                  {ROLES.map(r => (
-                    <MenuItem key={r} value={r}>{r}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', mt: 1, fontStyle: 'italic' }}>
-                Select your primary role: Researcher · Grant Officer · Finance Officer · Research Administrator · Data Steward · IT/System Admin
-              </Typography>
-            </Box>
-
-            {/* Password */}
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <Typography variant="overline" sx={{ mb: 1, display: 'block', color: 'text.secondary' }}>
-                  Password
-                </Typography>
-                <TextField
-                  fullWidth
-                  type="password"
-                  placeholder="Min. 8 characters"
-                  required
-                  value={form.password}
-                  onChange={handleChange('password')}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography variant="overline" sx={{ mb: 1, display: 'block', color: 'text.secondary' }}>
-                  Confirm Password
-                </Typography>
-                <TextField
-                  fullWidth
-                  type="password"
-                  placeholder="Re-enter password"
-                  required
-                  value={form.confirmPassword}
-                  onChange={handleChange('confirmPassword')}
-                />
-              </Grid>
-            </Grid>
-            {form.password && (
-              <Box>
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
-                  {[0, 1, 2, 3].map(i => (
-                    <Box
-                      key={i}
-                      sx={{
-                        height: 4,
-                        flex: 1,
-                        borderRadius: 999,
-                        transition: 'all 0.3s',
-                        bgcolor: i < pwScore ? PW_COLORS[Math.min(pwScore - 1, 3)] : 'divider',
-                      }}
-                    />
-                  ))}
-                </Box>
-                <Typography sx={{ fontSize: '0.75rem', mt: 1, color: PW_COLORS[Math.min(pwScore - 1, 3)] || 'text.secondary' }}>
-                  {['Too weak', 'Weak', 'Fair', 'Strong'][pwScore - 1] || 'Enter a password'}
-                </Typography>
-              </Box>
+          <Paper elevation={3} sx={{ p: 4, mb: 3 }}>
+            {/* Stepper */}
+            {tier && (
+              <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+                {steps.map((label) => (
+                  <Step key={label}>
+                    <StepLabel>{label}</StepLabel>
+                  </Step>
+                ))}
+              </Stepper>
             )}
 
-            {/* Error */}
+            {/* Error Alert */}
             {error && (
-              <Alert severity="error">
+              <Alert severity="error" sx={{ mb: 3 }}>
                 {error}
               </Alert>
             )}
 
-            {/* Submit */}
-            {/* Consent Note */}
-            <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1.7, fontStyle: 'italic', p: 2, bgcolor: 'action.hover', borderRadius: 1, border: 1, borderColor: 'divider' }}>
-              By registering, you agree to DACORIS's data processing terms. Your institutional data is stored securely with role-based access controls and full audit logging.
-            </Typography>
-
-            {/* Submit */}
-            <Button
-              type="submit"
-              disabled={loading}
-              fullWidth
-              variant="contained"
-              color="primary"
-              sx={{ py: 2 }}
-            >
-              {loading ? (
-                <CircularProgress size={16} sx={{ color: 'inherit' }} />
-              ) : (
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                  Create Account <ArrowForward sx={{ fontSize: 16 }} />
-                </Box>
-              )}
-            </Button>
-
-            {/* Bottom CTA */}
-            <Box sx={{ textAlign: 'center', mt: 3, pt: 3, borderTop: 1, borderColor: 'divider' }}>
-              <Typography sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
-                Already have an account?{' '}
-                <MuiLink component={Link} href="/login" sx={{ color: 'primary.main', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
-                  Sign in →
-                </MuiLink>
-              </Typography>
+            {/* Step Content */}
+            <Box sx={{ mb: 4 }}>
+              {renderStepContent()}
             </Box>
 
+            {/* Navigation Buttons */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+              <Button
+                disabled={activeStep === 0 || loading}
+                onClick={handleBack}
+                variant="outlined"
+                startIcon={<ArrowBack />}
+              >
+                Back
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleNext}
+                disabled={loading || (activeStep === 0 && !tier)}
+                endIcon={loading ? <CircularProgress size={20} /> : <ArrowForward />}
+              >
+                {loading 
+                  ? 'Submitting...' 
+                  : ((tier === 'admin_staff' && activeStep === 1) || (tier === 'researcher' && activeStep === 3))
+                    ? 'Complete Registration' 
+                    : 'Next'}
+              </Button>
+            </Box>
+
+            {/* Consent Note */}
+            {((tier === 'admin_staff' && activeStep === 1) || (tier === 'researcher' && activeStep === 3)) && (
+              <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1.7, fontStyle: 'italic', p: 2, bgcolor: 'action.hover', borderRadius: 1, border: 1, borderColor: 'divider', mt: 3 }}>
+                By registering, you agree to DACORIS's data processing terms. Your institutional data is stored securely with role-based access controls and full audit logging.
+              </Typography>
+            )}
+          </Paper>
+
+          {/* Bottom CTA */}
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
+              Already have an account?{' '}
+              <MuiLink component={Link} href="/login" sx={{ color: 'primary.main', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                Sign in →
+              </MuiLink>
+            </Typography>
           </Box>
         </Box>
       </Box>

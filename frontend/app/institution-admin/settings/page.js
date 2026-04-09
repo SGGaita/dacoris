@@ -11,6 +11,7 @@ import {
   CircularProgress,
   Switch,
   FormControlLabel,
+  useTheme,
 } from '@mui/material';
 import { Save as SaveIcon } from '@mui/icons-material';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -19,6 +20,7 @@ import { institutionAdminAPI } from '../../../lib/api';
 export default function InstitutionAdminSettingsPage() {
   const router = useRouter();
   const { fetchUser } = useAuth();
+  const theme = useTheme();
   
   const [institution, setInstitution] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -92,8 +94,8 @@ export default function InstitutionAdminSettingsPage() {
     <Box sx={{ p: 4 }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography sx={{ color: '#fff', fontSize: 24, fontWeight: 700, mb: 0.5 }}>Institution Settings</Typography>
-        <Typography sx={{ color: '#2c3035', fontSize: 14 }}>Configure your institution's settings and preferences</Typography>
+        <Typography sx={{ color: theme.palette.text.primary, fontSize: 24, fontWeight: 700, mb: 0.5 }}>Institution Settings</Typography>
+        <Typography sx={{ color: theme.palette.text.secondary, fontSize: 14 }}>Configure your institution's settings and preferences</Typography>
       </Box>
 
       {/* Alerts */}
@@ -110,26 +112,23 @@ export default function InstitutionAdminSettingsPage() {
 
       {/* Settings Form */}
       <Box sx={{ maxWidth: 800 }}>
-        <Box sx={{ bgcolor: '#1e293b', borderRadius: 3, p: 4, border: '1px solid #334155', mb: 3 }}>
+        <Box sx={{ 
+          bgcolor: theme.palette.background.paper, 
+          borderRadius: 3, 
+          p: 4, 
+          border: `1px solid ${theme.palette.divider}`, 
+          mb: 3,
+          boxShadow: theme.palette.mode === 'light' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+        }}>
           <Typography sx={{ color: '#1ca7a1', fontSize: 12, fontWeight: 700, mb: 1 }}>GENERAL</Typography>
-          <Typography sx={{ color: '#fff', fontSize: 16, fontWeight: 600, mb: 3 }}>Institution Information</Typography>
+          <Typography sx={{ color: theme.palette.text.primary, fontSize: 16, fontWeight: 600, mb: 3 }}>Institution Information</Typography>
           
           <TextField
             fullWidth
             label="Institution Name"
             value={settingsForm.name}
             onChange={(e) => setSettingsForm({ ...settingsForm, name: e.target.value })}
-            sx={{
-              mb: 3,
-              '& .MuiOutlinedInput-root': {
-                color: '#fff',
-                bgcolor: '#0f172a',
-                '& fieldset': { borderColor: '#334155' },
-                '&:hover fieldset': { borderColor: '#475569' },
-                '&.Mui-focused fieldset': { borderColor: '#1ca7a1' },
-              },
-              '& .MuiInputLabel-root': { color: '#94a3b8' },
-            }}
+            sx={{ mb: 3 }}
           />
 
           <TextField
@@ -138,18 +137,7 @@ export default function InstitutionAdminSettingsPage() {
             value={settingsForm.domain}
             onChange={(e) => setSettingsForm({ ...settingsForm, domain: e.target.value })}
             helperText="e.g., university.edu"
-            sx={{
-              mb: 3,
-              '& .MuiOutlinedInput-root': {
-                color: '#fff',
-                bgcolor: '#0f172a',
-                '& fieldset': { borderColor: '#334155' },
-                '&:hover fieldset': { borderColor: '#475569' },
-                '&.Mui-focused fieldset': { borderColor: '#1ca7a1' },
-              },
-              '& .MuiInputLabel-root': { color: '#94a3b8' },
-              '& .MuiFormHelperText-root': { color: '#2c3035' },
-            }}
+            sx={{ mb: 3 }}
           />
 
           <TextField
@@ -160,24 +148,20 @@ export default function InstitutionAdminSettingsPage() {
             helperText="Comma-separated list of email domains for auto-approval"
             multiline
             rows={2}
-            sx={{
-              mb: 3,
-              '& .MuiOutlinedInput-root': {
-                color: '#fff',
-                bgcolor: '#0f172a',
-                '& fieldset': { borderColor: '#334155' },
-                '&:hover fieldset': { borderColor: '#475569' },
-                '&.Mui-focused fieldset': { borderColor: '#1ca7a1' },
-              },
-              '& .MuiInputLabel-root': { color: '#94a3b8' },
-              '& .MuiFormHelperText-root': { color: '#2c3035' },
-            }}
+            sx={{ mb: 3 }}
           />
         </Box>
 
-        <Box sx={{ bgcolor: '#1e293b', borderRadius: 3, p: 4, border: '1px solid #334155', mb: 3 }}>
+        <Box sx={{ 
+          bgcolor: theme.palette.background.paper, 
+          borderRadius: 3, 
+          p: 4, 
+          border: `1px solid ${theme.palette.divider}`, 
+          mb: 3,
+          boxShadow: theme.palette.mode === 'light' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+        }}>
           <Typography sx={{ color: '#1ca7a1', fontSize: 12, fontWeight: 700, mb: 1 }}>USER MANAGEMENT</Typography>
-          <Typography sx={{ color: '#fff', fontSize: 16, fontWeight: 600, mb: 3 }}>Access Control</Typography>
+          <Typography sx={{ color: theme.palette.text.primary, fontSize: 16, fontWeight: 600, mb: 3 }}>Access Control</Typography>
           
           <FormControlLabel
             control={
@@ -196,10 +180,10 @@ export default function InstitutionAdminSettingsPage() {
             }
             label={
               <Box>
-                <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
+                <Typography sx={{ color: theme.palette.text.primary, fontSize: 14, fontWeight: 600 }}>
                   Auto-approve users with verified domains
                 </Typography>
-                <Typography sx={{ color: '#2c3035', fontSize: 12 }}>
+                <Typography sx={{ color: theme.palette.text.secondary, fontSize: 12 }}>
                   Automatically approve users who register with verified email domains
                 </Typography>
               </Box>
@@ -211,12 +195,12 @@ export default function InstitutionAdminSettingsPage() {
           <Button
             onClick={() => loadData()}
             sx={{
-              color: '#94a3b8',
+              color: theme.palette.text.secondary,
               textTransform: 'none',
               fontWeight: 600,
               px: 3,
               py: 1.5,
-              '&:hover': { bgcolor: 'rgba(148, 163, 184, 0.1)' },
+              '&:hover': { bgcolor: theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.1)' : 'rgba(0,0,0,0.05)' },
             }}
           >
             Reset

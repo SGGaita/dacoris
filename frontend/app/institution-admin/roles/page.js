@@ -27,6 +27,7 @@ import {
   Checkbox,
   FormGroup,
   FormControlLabel,
+  useTheme,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -35,6 +36,7 @@ import { institutionAdminAPI } from '../../../lib/api';
 export default function InstitutionAdminRolesPage() {
   const router = useRouter();
   const { fetchUser } = useAuth();
+  const theme = useTheme();
   
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -105,8 +107,8 @@ export default function InstitutionAdminRolesPage() {
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography sx={{ color: '#fff', fontSize: 24, fontWeight: 700, mb: 0.5 }}>Roles & Permissions</Typography>
-          <Typography sx={{ color: '#2c3035', fontSize: 14 }}>Manage user roles and access control</Typography>
+          <Typography sx={{ color: theme.palette.text.primary, fontSize: 24, fontWeight: 700, mb: 0.5 }}>Roles & Permissions</Typography>
+          <Typography sx={{ color: theme.palette.text.secondary, fontSize: 14 }}>Manage user roles and access control</Typography>
         </Box>
         <Button
           variant="contained"
@@ -141,27 +143,33 @@ export default function InstitutionAdminRolesPage() {
       )}
 
       {/* Roles Table */}
-      <Box sx={{ bgcolor: '#1e293b', borderRadius: 3, border: '1px solid #334155', overflow: 'hidden' }}>
+      <Box sx={{ 
+        bgcolor: theme.palette.background.paper, 
+        borderRadius: 3, 
+        border: `1px solid ${theme.palette.divider}`, 
+        overflow: 'hidden',
+        boxShadow: theme.palette.mode === 'light' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+      }}>
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow sx={{ bgcolor: '#0f172a' }}>
-                <TableCell sx={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid #334155' }}>Role Name</TableCell>
-                <TableCell sx={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid #334155' }}>Description</TableCell>
-                <TableCell sx={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid #334155' }}>Users</TableCell>
-                <TableCell sx={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid #334155' }}>Actions</TableCell>
+              <TableRow sx={{ bgcolor: theme.palette.mode === 'dark' ? '#0f172a' : theme.palette.background.default }}>
+                <TableCell sx={{ color: theme.palette.text.secondary, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', borderBottom: `1px solid ${theme.palette.divider}` }}>Role Name</TableCell>
+                <TableCell sx={{ color: theme.palette.text.secondary, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', borderBottom: `1px solid ${theme.palette.divider}` }}>Description</TableCell>
+                <TableCell sx={{ color: theme.palette.text.secondary, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', borderBottom: `1px solid ${theme.palette.divider}` }}>Users</TableCell>
+                <TableCell sx={{ color: theme.palette.text.secondary, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', borderBottom: `1px solid ${theme.palette.divider}` }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {roles.map((role) => (
-                <TableRow key={role.id} sx={{ '&:hover': { bgcolor: '#0f172a' } }}>
-                  <TableCell sx={{ color: '#fff', fontSize: 14, fontWeight: 600, borderBottom: '1px solid #334155' }}>
+                <TableRow key={role.id} sx={{ '&:hover': { bgcolor: theme.palette.mode === 'dark' ? '#0f172a' : 'rgba(0,0,0,0.02)' } }}>
+                  <TableCell sx={{ color: theme.palette.text.primary, fontSize: 14, fontWeight: 600, borderBottom: `1px solid ${theme.palette.divider}` }}>
                     {role.name}
                   </TableCell>
-                  <TableCell sx={{ color: '#94a3b8', fontSize: 13, borderBottom: '1px solid #334155' }}>
+                  <TableCell sx={{ color: theme.palette.text.secondary, fontSize: 13, borderBottom: `1px solid ${theme.palette.divider}` }}>
                     {role.description || '-'}
                   </TableCell>
-                  <TableCell sx={{ borderBottom: '1px solid #334155' }}>
+                  <TableCell sx={{ borderBottom: `1px solid ${theme.palette.divider}` }}>
                     <Chip
                       label={`${role.user_count || 0} users`}
                       size="small"
@@ -174,7 +182,7 @@ export default function InstitutionAdminRolesPage() {
                       }}
                     />
                   </TableCell>
-                  <TableCell sx={{ borderBottom: '1px solid #334155' }}>
+                  <TableCell sx={{ borderBottom: `1px solid ${theme.palette.divider}` }}>
                     <Button
                       size="small"
                       sx={{
@@ -196,7 +204,7 @@ export default function InstitutionAdminRolesPage() {
 
         {roles.length === 0 && (
           <Box sx={{ p: 4, textAlign: 'center' }}>
-            <Typography sx={{ color: '#2c3035', fontSize: 14 }}>No roles created yet</Typography>
+            <Typography sx={{ color: theme.palette.text.secondary, fontSize: 14 }}>No roles created yet</Typography>
           </Box>
         )}
       </Box>
@@ -209,13 +217,13 @@ export default function InstitutionAdminRolesPage() {
         fullWidth
         PaperProps={{
           sx: {
-            bgcolor: '#1e293b',
+            bgcolor: theme.palette.background.paper,
             borderRadius: 3,
-            border: '1px solid #334155',
+            border: `1px solid ${theme.palette.divider}`,
           },
         }}
       >
-        <DialogTitle sx={{ color: '#fff', fontSize: 18, fontWeight: 700 }}>Create New Role</DialogTitle>
+        <DialogTitle sx={{ color: theme.palette.text.primary, fontSize: 18, fontWeight: 700 }}>Create New Role</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -244,31 +252,21 @@ export default function InstitutionAdminRolesPage() {
             rows={3}
             value={roleForm.description}
             onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })}
-            sx={{
-              mb: 2,
-              '& .MuiOutlinedInput-root': {
-                color: '#fff',
-                bgcolor: '#0f172a',
-                '& fieldset': { borderColor: '#334155' },
-                '&:hover fieldset': { borderColor: '#475569' },
-                '&.Mui-focused fieldset': { borderColor: '#1ca7a1' },
-              },
-              '& .MuiInputLabel-root': { color: '#94a3b8' },
-            }}
+            sx={{ mb: 2 }}
           />
-          <Typography sx={{ color: '#94a3b8', fontSize: 14, mb: 1 }}>Permissions</Typography>
+          <Typography sx={{ color: theme.palette.text.secondary, fontSize: 14, mb: 1 }}>Permissions</Typography>
           <FormGroup>
             <FormControlLabel
-              control={<Checkbox sx={{ color: '#94a3b8', '&.Mui-checked': { color: '#1ca7a1' } }} />}
-              label={<Typography sx={{ color: '#fff', fontSize: 14 }}>View Users</Typography>}
+              control={<Checkbox sx={{ '&.Mui-checked': { color: '#1ca7a1' } }} />}
+              label={<Typography sx={{ color: theme.palette.text.primary, fontSize: 14 }}>View Users</Typography>}
             />
             <FormControlLabel
-              control={<Checkbox sx={{ color: '#94a3b8', '&.Mui-checked': { color: '#1ca7a1' } }} />}
-              label={<Typography sx={{ color: '#fff', fontSize: 14 }}>Manage Users</Typography>}
+              control={<Checkbox sx={{ '&.Mui-checked': { color: '#1ca7a1' } }} />}
+              label={<Typography sx={{ color: theme.palette.text.primary, fontSize: 14 }}>Manage Users</Typography>}
             />
             <FormControlLabel
-              control={<Checkbox sx={{ color: '#94a3b8', '&.Mui-checked': { color: '#1ca7a1' } }} />}
-              label={<Typography sx={{ color: '#fff', fontSize: 14 }}>Manage Roles</Typography>}
+              control={<Checkbox sx={{ '&.Mui-checked': { color: '#1ca7a1' } }} />}
+              label={<Typography sx={{ color: theme.palette.text.primary, fontSize: 14 }}>Manage Roles</Typography>}
             />
           </FormGroup>
         </DialogContent>
@@ -276,10 +274,10 @@ export default function InstitutionAdminRolesPage() {
           <Button
             onClick={() => setRoleDialogOpen(false)}
             sx={{
-              color: '#94a3b8',
+              color: theme.palette.text.secondary,
               textTransform: 'none',
               fontWeight: 600,
-              '&:hover': { bgcolor: 'rgba(148, 163, 184, 0.1)' },
+              '&:hover': { bgcolor: theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.1)' : 'rgba(0,0,0,0.05)' },
             }}
           >
             Cancel

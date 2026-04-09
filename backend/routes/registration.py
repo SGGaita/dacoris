@@ -20,6 +20,7 @@ from account_types import (
     get_default_roles
 )
 from auth import get_password_hash
+from services.email_service import EmailService
 import sys
 sys.path.append('..')
 
@@ -263,6 +264,7 @@ async def complete_registration(
         password_hash=get_password_hash(request.password),
         account_type=AccountType.ORCID if request.orcid_id else AccountType.INSTITUTION_ADMIN,
         status=UserStatus.PENDING,
+        email_verified=False,
         orcid_id=request.orcid_id,
         primary_institution_id=institution.id,
         primary_account_type=account_type_enum,
@@ -295,9 +297,276 @@ async def complete_registration(
             )
         await db.commit()
     
+    # Send verification email
+    try:
+        verification_code = await EmailService.create_verification(request.email.lower(), db)
+        email_sent = await EmailService.send_verification_email(request.email.lower(), verification_code)
+        
+        if email_sent:
+            message = "Registration successful! A verification code has been sent to your email. Please verify your email to activate your account."
+        else:
+            message = "Registration successful, but we couldn't send the verification email. Please contact support."
+    except Exception as e:
+        print(f"Error sending verification email: {e}")
+        message = "Registration successful, but there was an error sending the verification email. Please contact support."
+    
     return RegistrationResponse(
         success=True,
-        message="Registration successful. Your account is pending approval by your institution administrator.",
+        message=message,
+        user_id=new_user.id,
+        status=new_user.status.value,
+        requires_approval=True
+    )
+
+
+class ResearcherRegistrationRequest(BaseModel):
+    """Researcher registration with ORCID"""
+    first_name: str
+    given_name: str
+    affiliation: Optional[str] = None
+    email: EmailStr
+    institution: str
+    institution_id: Optional[int] = None
+    orcid_id: Optional[str] = None
+    password: str
+    confirm_password: str
+    department: Optional[str] = None
+    phone: Optional[str] = None
+    
+    @validator('confirm_password')
+    def passwords_match(cls, v, values):
+        if 'password' in values and v != values['password']:
+            raise ValueError('Passwords do not match')
+        return v
+
+
+class AdminStaffRegistrationRequest(BaseModel):
+    """Admin staff registration"""
+    name: str
+    email: EmailStr
+    department: Optional[str] = None
+    job_title: Optional[str] = None
+    phone: Optional[str] = None
+    password: str
+    confirm_password: str
+    
+    @validator('confirm_password')
+    def passwords_match(cls, v, values):
+        if 'password' in values and v != values['password']:
+            raise ValueError('Passwords do not match')
+        return v
+
+
+@router.post("/researcher/orcid", response_model=RegistrationResponse)
+async def register_researcher(
+    request: ResearcherRegistrationRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Register a researcher account with optional ORCID"""
+    
+    # Find institution by ID or name
+    if request.institution_id:
+        result = await db.execute(
+            select(Institution).where(Institution.id == request.institution_id)
+        )
+    else:
+        result = await db.execute(
+            select(Institution).where(Institution.name == request.institution)
+        )
+    
+    institution = result.scalar_one_or_none()
+    
+    if not institution:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Institution not found"
+        )
+    
+    # Validate email domain
+    email_domain = request.email.split('@')[1].lower()
+    valid_domains = [institution.domain.lower()]
+    if institution.verified_domains:
+        valid_domains.extend([d.strip().lower() for d in institution.verified_domains.split(',')])
+    
+    if email_domain not in valid_domains:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Email domain must match institution domain"
+        )
+    
+    # Check if user already exists
+    result = await db.execute(
+        select(User).where(
+            User.email == request.email.lower(),
+            User.primary_institution_id == institution.id
+        )
+    )
+    existing_user = result.scalar_one_or_none()
+    
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An account with this email already exists"
+        )
+    
+    # Check if ORCID already exists (if provided)
+    if request.orcid_id:
+        result = await db.execute(
+            select(User).where(User.orcid_id == request.orcid_id)
+        )
+        existing_orcid_user = result.scalar_one_or_none()
+        
+        if existing_orcid_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="An account with this ORCID iD already exists"
+            )
+    
+    # Create user account
+    full_name = f"{request.first_name} {request.given_name}"
+    new_user = User(
+        email=request.email.lower(),
+        name=full_name,
+        password_hash=get_password_hash(request.password),
+        account_type=AccountType.ORCID if request.orcid_id else AccountType.INSTITUTION_ADMIN,
+        status=UserStatus.PENDING,
+        email_verified=False,
+        orcid_id=request.orcid_id,
+        primary_institution_id=institution.id,
+        primary_account_type=PrimaryAccountType.RESEARCHER,
+        department=request.department,
+        phone=request.phone,
+        is_global_admin=False,
+        is_institution_admin=False,
+        is_guest=False
+    )
+    
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    
+    # Send verification email
+    try:
+        verification_code = await EmailService.create_verification(request.email.lower(), db)
+        email_sent = await EmailService.send_verification_email(request.email.lower(), verification_code)
+        
+        if email_sent:
+            message = "Registration successful! A verification code has been sent to your email. Please verify your email to activate your account."
+        else:
+            message = "Registration successful, but we couldn't send the verification email. Please contact support."
+    except Exception as e:
+        print(f"Error sending verification email: {e}")
+        message = "Registration successful, but there was an error sending the verification email. Please contact support."
+    
+    return RegistrationResponse(
+        success=True,
+        message=message,
+        user_id=new_user.id,
+        status=new_user.status.value,
+        requires_approval=True
+    )
+
+
+@router.post("/admin-staff", response_model=RegistrationResponse)
+async def register_admin_staff(
+    request: AdminStaffRegistrationRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Register an administrative staff account"""
+    
+    # Extract domain from email
+    email_domain = request.email.split('@')[1].lower()
+    
+    # Find institution by email domain
+    result = await db.execute(
+        select(Institution).where(Institution.domain == email_domain)
+    )
+    institution = result.scalar_one_or_none()
+    
+    # If not found by primary domain, check verified domains
+    if not institution:
+        result = await db.execute(select(Institution))
+        institutions = result.scalars().all()
+        
+        for inst in institutions:
+            if inst.verified_domains:
+                verified = [d.strip().lower() for d in inst.verified_domains.split(',')]
+                if email_domain in verified:
+                    institution = inst
+                    break
+    
+    if not institution:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email domain not recognized. Please use your institutional email address."
+        )
+    
+    # Check if user already exists
+    result = await db.execute(
+        select(User).where(
+            User.email == request.email.lower(),
+            User.primary_institution_id == institution.id
+        )
+    )
+    existing_user = result.scalar_one_or_none()
+    
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An account with this email already exists"
+        )
+    
+    # Create user account
+    new_user = User(
+        email=request.email.lower(),
+        name=request.name,
+        password_hash=get_password_hash(request.password),
+        account_type=AccountType.INSTITUTION_ADMIN,
+        status=UserStatus.PENDING,
+        email_verified=False,
+        primary_institution_id=institution.id,
+        primary_account_type=PrimaryAccountType.ADMIN_STAFF,
+        department=request.department,
+        job_title=request.job_title,
+        phone=request.phone,
+        is_global_admin=False,
+        is_institution_admin=False,
+        is_guest=False
+    )
+    
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    
+    # Send verification email
+    try:
+        verification_code = await EmailService.create_verification(request.email.lower(), db)
+        email_sent = await EmailService.send_verification_email(request.email.lower(), verification_code)
+        
+        if email_sent:
+            message = "Registration successful! A verification code has been sent to your email. Please verify your email to activate your account."
+        else:
+            message = "Registration successful, but we couldn't send the verification email. Please contact support."
+    except Exception as e:
+        print(f"Error sending verification email: {e}")
+        message = "Registration successful, but there was an error sending the verification email. Please contact support."
+    
+    # Notify institution admins about new registration
+    try:
+        from services.notification_service import NotificationService
+        await NotificationService.notify_admins_new_registration(
+            db=db,
+            institution_id=institution.id,
+            new_user_id=new_user.id,
+            new_user_name=request.name,
+            new_user_email=request.email.lower()
+        )
+    except Exception as e:
+        print(f"Error sending notification to admins: {e}")
+    
+    return RegistrationResponse(
+        success=True,
+        message=message,
         user_id=new_user.id,
         status=new_user.status.value,
         requires_approval=True

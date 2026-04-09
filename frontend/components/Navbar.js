@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import NotificationBell from './notifications/NotificationBell';
 
 export default function Navbar() {
   const router = useRouter();
@@ -24,9 +25,13 @@ export default function Navbar() {
     router.push('/login');
   };
 
+  const ADMIN_STAFF_ROLES = ['ADMIN_STAFF','GRANT_MANAGER','FINANCE_OFFICER','ETHICS_COMMITTEE_MEMBER','DATA_STEWARD','DATA_ENGINEER','INSTITUTIONAL_LEADERSHIP','EXTERNAL_REVIEWER','GUEST_COLLABORATOR','EXTERNAL_FUNDER'];
+
   const getDashboardLink = () => {
     if (user?.is_global_admin)       return '/global-admin/dashboard';
     if (user?.is_institution_admin)  return '/institution-admin/dashboard';
+    if (user?.primary_account_type === 'RESEARCHER') return '/researcher/dashboard';
+    if (ADMIN_STAFF_ROLES.includes(user?.primary_account_type)) return '/admin-staff/dashboard';
     return '/onboarding';
   };
 
@@ -44,6 +49,7 @@ export default function Navbar() {
         {/* Nav links */}
         <Button color="inherit" component={Link} href="/login">Home</Button>
         <Button color="inherit" component={Link} href="/about">About</Button>
+        <Button color="inherit" component={Link} href="/research-output">Research Output</Button>
 
         {/* Theme toggle */}
         <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
@@ -54,6 +60,9 @@ export default function Navbar() {
 
         {loading ? null : user ? (
           <>
+            {/* Notification Bell */}
+            <NotificationBell />
+
             <Button
               color="inherit"
               startIcon={<DashboardIcon />}
@@ -80,6 +89,7 @@ export default function Navbar() {
               anchorEl={anchorEl}
               open={Boolean(anchorEl)}
               onClose={handleMenuClose}
+              disableScrollLock
               transformOrigin={{ horizontal: 'right', vertical: 'top' }}
               anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
               slotProps={{ paper: { sx: { mt: 1 } } }}
