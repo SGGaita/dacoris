@@ -2487,117 +2487,9 @@ This module bridges the gap between traditional LMS platforms (like Moodle) and 
 
 ---
 
-### 10.2 Training Categories & Target Audiences
+### 10.2 AI-Enhanced Learning Features
 
-#### 10.2.1 Young Researchers & Postgraduate Students
-
-**Training Tracks:**
-
-1. **Research Methodologies**
-   - Quantitative research methods
-   - Qualitative research methods
-   - Mixed methods approaches
-   - Data collection techniques
-   - Sampling strategies
-   - Research ethics and integrity
-
-2. **Scientific Writing & Communication**
-   - Academic writing fundamentals
-   - Literature review techniques
-   - Manuscript preparation
-   - Thesis/dissertation writing
-   - Scientific presentation skills
-   - Grant proposal writing
-
-3. **Digital Skills for Research**
-   - Reference management (Zotero, Mendeley, EndNote)
-   - Data analysis tools (R, Python, SPSS, NVivo)
-   - Research data management
-   - Digital collaboration tools
-   - Open science practices
-   - ORCID and researcher profiles
-
-4. **Project & Time Management**
-   - PhD/Masters project planning
-   - Time management for researchers
-   - Milestone tracking
-   - Work-life balance
-   - Stress management
-   - Academic productivity tools
-
-5. **Internationalization & Collaboration**
-   - International research partnerships
-   - Cross-cultural collaboration
-   - Virtual teamwork
-   - Conference participation
-   - Networking strategies
-   - Mobility and exchange programs
-
----
-
-#### 10.2.2 Research Supervisors & Faculty
-
-**Training Tracks:**
-
-1. **Postgraduate Supervision**
-   - Effective supervision practices
-   - Student-supervisor relationships
-   - Feedback and mentoring
-   - Conflict resolution
-   - Ethical supervision
-   - Remote supervision techniques
-
-2. **Research Leadership**
-   - Building research teams
-   - Grant management for PIs
-   - Research strategy development
-   - Collaboration and partnerships
-   - Research impact and dissemination
-   - Intellectual property management
-
-3. **Digital Tools for Supervision**
-   - Online supervision platforms
-   - Progress tracking systems
-   - Digital feedback tools
-   - Virtual meeting best practices
-   - Collaborative writing tools
-   - Assessment technologies
-
----
-
-#### 10.2.3 Institutional Staff (IRO, Grant Officers, Research Managers)
-
-**Training Tracks:**
-
-1. **Research Administration**
-   - Grant lifecycle management
-   - Compliance and regulations
-   - Budget management
-   - Reporting requirements
-   - Audit preparation
-   - Risk management
-
-2. **Internationalization Management**
-   - Partnership development
-   - MoU negotiation
-   - Mobility program management
-   - International funding opportunities
-   - Cross-border collaboration
-   - Quality assurance
-
-3. **Digital Transformation**
-   - CRIS/RIMS implementation
-   - Data management systems
-   - Workflow automation
-   - Analytics and reporting
-   - Change management
-   - User training and support
-
----
-
-### 10.3 AI-Enhanced Learning Features
-
-#### 10.3.1 AI-Powered Content Generation
+#### 10.2.1 AI-Powered Content Generation
 
 **Features:**
 - **Course Material Generation:** AI creates course outlines, lesson plans, and learning objectives based on topic input
@@ -2626,7 +2518,7 @@ ContentGenerationPrompt
 
 ---
 
-#### 10.3.2 Personalized Learning Paths
+#### 10.2.2 Personalized Learning Paths
 
 **Features:**
 - **Competency Assessment:** AI analyzes learner's current skills and knowledge gaps
@@ -2663,7 +2555,7 @@ CompetencyAssessment
 
 ---
 
-#### 10.3.3 AI Teaching Assistant (Chatbot)
+#### 10.2.3 AI Teaching Assistant (Chatbot)
 
 **Features:**
 - **24/7 Q&A Support:** AI answers learner questions about course content
@@ -2700,7 +2592,7 @@ AIKnowledgeBase
 
 ---
 
-#### 10.3.4 Automated Assessment & Feedback
+#### 10.2.4 Automated Assessment & Feedback
 
 **Features:**
 - **Essay Grading:** AI evaluates written assignments for structure, coherence, argumentation
@@ -2738,7 +2630,7 @@ PlagiarismCheck
 
 ---
 
-#### 10.3.5 Research Writing Assistant
+#### 10.2.5 Research Writing Assistant
 
 **Features:**
 - **Literature Review Helper:** AI suggests relevant papers based on research topic
@@ -2770,7 +2662,7 @@ AIWritingSuggestion
 
 ---
 
-#### 10.3.6 Predictive Analytics for Learning Outcomes
+#### 10.2.6 Predictive Analytics for Learning Outcomes
 
 **Features:**
 - **Dropout Prediction:** Identifies learners at risk of not completing courses
@@ -2796,9 +2688,9 @@ InterventionLog
 
 ---
 
-### 10.4 Core LMS Features
+### 10.3 Core LMS Features
 
-#### 10.4.1 Course Management
+#### 10.3.1 Course Management
 
 **Features:**
 - **Course Builder:** Drag-and-drop course creation interface
@@ -2834,7 +2726,7 @@ LearningOutcome
 
 ---
 
-#### 10.4.2 Enrollment & Progress Tracking
+#### 10.3.2 Enrollment & Progress Tracking
 
 **Features:**
 - **Self-Enrollment:** Learners browse and enroll in courses
@@ -2871,7 +2763,7 @@ CompetencyBadge
 
 ---
 
-#### 10.4.3 Assessment & Evaluation
+#### 10.3.3 Assessment & Evaluation
 
 **Features:**
 - **Quiz Types:** MCQ, True/False, Short Answer, Essay, Matching, Fill-in-blank
@@ -2904,7 +2796,7 @@ PeerReview
 
 ---
 
-#### 10.4.4 Discussion Forums & Collaboration
+#### 10.3.4 Discussion Forums & Collaboration
 
 **Features:**
 - **Course Forums:** Threaded discussions per course
@@ -2935,9 +2827,9 @@ StudyGroup
 
 ---
 
-### 10.5 Integration with DACORIS Modules
+### 10.4 Integration with DACORIS Modules
 
-#### 10.5.1 Research Module Integration
+#### 10.4.1 Research Module Integration
 
 **Contextualized Training:**
 - **Supervision Training:** Auto-enroll supervisors when they're assigned PhD/Masters students
@@ -2955,7 +2847,7 @@ Research Module → Training Module
 
 ---
 
-#### 10.5.2 Grant Module Integration
+#### 10.4.2 Grant Module Integration
 
 **Grant-Related Training:**
 - **Proposal Writing Course:** Linked to grant application process
@@ -2972,7 +2864,7 @@ Grant Module → Training Module
 
 ---
 
-#### 10.5.3 Performance Contracting Integration
+#### 10.4.3 Performance Contracting Integration
 
 **Staff Development Tracking:**
 - **Training Hours:** Auto-populate from completed courses
@@ -2990,9 +2882,9 @@ Training Module → Performance Contracting
 
 ---
 
-### 10.6 AI Infrastructure & Architecture
+### 10.5 AI Infrastructure & Architecture
 
-#### 10.6.1 AI Model Management
+#### 10.5.1 AI Model Management
 
 **Components:**
 - **Model Registry:** Catalog of AI models with versions and metadata
@@ -3023,7 +2915,7 @@ PromptTemplate
 
 ---
 
-#### 10.6.2 Ethical AI & Governance
+#### 10.5.2 Ethical AI & Governance
 
 **Features:**
 - **Bias Detection:** Monitor AI outputs for bias
@@ -3041,9 +2933,9 @@ PromptTemplate
 
 ---
 
-### 10.7 Workflows & Flowcharts
+### 10.6 Workflows & Flowcharts
 
-#### 10.7.1 AI-Enhanced Course Creation Workflow
+#### 10.6.1 AI-Enhanced Course Creation Workflow
 
 ```mermaid
 flowchart TD
@@ -3092,7 +2984,7 @@ flowchart TD
 
 ---
 
-#### 10.7.2 Personalized Learning Path Generation
+#### 10.6.2 Personalized Learning Path Generation
 
 ```mermaid
 flowchart TD
@@ -3145,7 +3037,7 @@ flowchart TD
 
 ---
 
-#### 10.7.3 AI Teaching Assistant Interaction Flow
+#### 10.6.3 AI Teaching Assistant Interaction Flow
 
 ```mermaid
 flowchart TD
@@ -3203,7 +3095,7 @@ flowchart TD
 
 ---
 
-### 10.8 API Endpoints
+### 10.7 API Endpoints
 
 ```
 # Course Management
@@ -3270,7 +3162,7 @@ GET    /api/training/integrations/competencies         # Get competency mappings
 
 ---
 
-### 10.9 Implementation Phases
+### 10.8 Implementation Phases
 
 #### Phase T1: Core LMS Foundation (Weeks 1-6)
 - [ ] Database schema for courses, enrollments, assessments
@@ -3323,7 +3215,7 @@ GET    /api/training/integrations/competencies         # Get competency mappings
 
 ---
 
-### 10.10 Frontend Implementation
+### 10.9 Frontend Implementation
 
 - [ ] Course catalog and search interface
 - [ ] Course player (video, documents, interactive content)
@@ -3342,7 +3234,7 @@ GET    /api/training/integrations/competencies         # Get competency mappings
 
 ---
 
-### 10.11 AI Model Costs & Budget Considerations
+### 10.10 AI Model Costs & Budget Considerations
 
 **Estimated AI Usage Costs:**
 
